@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <poll.h>
 #include <fcntl.h>
+#include <pthread.h>
 #include "err.h"
 #include "common.h"
 
@@ -20,6 +21,8 @@ static buffer_state buffer;
 static int dump_fd = 1; // default = stdout
 static bool get_metadata;
 static bool finish = false;
+static pthread_t thread;
+static pthread_attr_t attr;
 
 static void validate_arguments(int argc, char **argv) {
     if (argc != 7) {
@@ -109,7 +112,42 @@ static void send_header(char* path, bool get_metadata) {
     if (write(host_socket, &header, sizeof(header)) < 0) {
         syserr("write");
     }
+}
 
+static void get_stream() {
+    buffer.length_read = read(host_socket, &buffer.buf, BUFFER_SIZE);
+    write(dump_fd, &buffer.buf, (size_t) buffer.length_read);
+}
+
+static void initialize_pthread_attr() {
+    if (pthread_attr_init(&attr) != 0) {
+        syserr("attr init");
+    }
+    if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0) {
+        syserr("attr modification");
+    }
+}
+
+static void destroy_pthread_attr() {
+    pthread_attr_destroy(&attr);
+}
+
+void *worker(void *init_data) {
+    while(!finish) {
+        get_stream();
+    }
+}
+
+void start_thread() {
+    if (pthread_create(&thread, &attr, worker, NULL) != 0) {
+        syserr("pthread_create");
+    }
+}
+
+void listen_for_master_commands() {
+    printf("Listening...\n");
+    sleep(5);
+    return;
 }
 
 int main (int argc, char **argv) {
@@ -119,11 +157,13 @@ int main (int argc, char **argv) {
     get_server_address(argv[1], argv[3]);
     create_socket();
     connect_to_server();
+    initialize_pthread_attr();
     send_header(argv[2], get_metadata);
+    start_thread();
     do {
-        buffer.length_read = read(host_socket, &buffer.buf, BUFFER_SIZE);
-        write(dump_fd, &buffer.buf, (size_t) buffer.length_read);
+        listen_for_master_commands();
     } while(!finish);
+    destroy_pthread_attr();
     close_dump_file();
     exit(EXIT_SUCCESS);
 }
