@@ -16,11 +16,14 @@
 
 static int host_socket = 0;
 static int master_socket = 0;
+static struct pollfd host_socket_state;
+static struct pollfd master_socket_state;
 static struct addrinfo host_addr_hints, *host_addr_result;
 static buffer_state buffer;
 static int dump_fd = 1; // default = stdout
 static bool get_metadata;
 static bool finish = false;
+static bool header_parsed = false;
 static pthread_t thread;
 static pthread_attr_t attr;
 
@@ -103,7 +106,7 @@ static void send_header(char* path, bool get_metadata) {
         "GET %s HTTP/1.0\r\n"
         "User-Agent: MPlayer 2.0-728-g2c378c7-4build1\r\n"
         "Accept: */*\r\n"
-        "Icy-MetaData : %d\r\n"
+        "Icy-MetaData: %d\r\n"
         "Connection: close\r\n"
         "\r\n",
         path, get_metadata
@@ -114,8 +117,80 @@ static void send_header(char* path, bool get_metadata) {
     }
 }
 
+static void reset_host_buffer() {
+    memset(buffer.buf, 0, sizeof(buffer.buf));
+    buffer.length_read = 0;
+}
+
+static void get_header_from_buffer(char* header_buffer) {
+    memset(header_buffer, 0, sizeof(header_buffer));
+    if (buffer.length_read < 0) {
+        syserr("read");
+    }
+    char* header_end = strstr(buffer.buf, "\r\n\r\n");
+    if (!header_end) {
+        return;
+    }
+    strncpy(header_buffer, buffer.buf, header_end - buffer.buf);
+    memmove(buffer.buf, header_end + 4, buffer.length_read - strlen(header_buffer) - 4);
+}
+
+static int get_status_code(char* header_buffer) {
+    char code[4];
+    strncpy(code, &header_buffer[4], 3);
+    int c = atoi(code);
+    printf("Code: %d\n", c);
+    return c;
+}
+
+static long get_metadata_length(char* header_buffer) {
+    char* data_lenght = strstr(header_buffer, "icy-metaint");
+    if (data_lenght) {
+        printf("Data length found: %s\n", data_lenght);
+    } else {
+        perror("Data length not found\n");
+        finish = true;
+        return -1;
+    }
+    long dl = strtol(&data_lenght[12], NULL, 10);
+    return dl;
+}
+
+static void parse_http_response() {
+    char header_buffer[BUFFER_SIZE];
+    buffer.length_read += read(host_socket,
+                              &buffer.buf[buffer.length_read],
+                              BUFFER_SIZE - (size_t) buffer.length_read);
+    get_header_from_buffer(header_buffer);
+    if (!strcmp(header_buffer, "")) {
+        return;
+    }
+    printf("header: \n%s\n", header_buffer);
+    header_parsed = true;
+    int http_response_code = get_status_code(header_buffer);
+    if (http_response_code != 200) {
+        fprintf(stderr, "Response code form server: %d", http_response_code);
+        finish = true;
+        return;
+    }
+    long metadata_length;
+    if (get_metadata){
+        metadata_length = get_metadata_length(header_buffer);
+        printf("Metadata length: %ld\n", metadata_length);
+    }
+    write(dump_fd, &buffer.buf, (size_t) buffer.length_read);
+}
+
 static void get_stream() {
+    reset_host_buffer();
     buffer.length_read = read(host_socket, &buffer.buf, BUFFER_SIZE);
+    if (buffer.length_read < 0) {
+        syserr("read");
+    }
+    char* metadata = strstr(buffer.buf, "StreamTitle");
+    if (metadata) {
+        printf("metadata found: %s\n", metadata);
+    }
     write(dump_fd, &buffer.buf, (size_t) buffer.length_read);
 }
 
@@ -132,22 +207,35 @@ static void destroy_pthread_attr() {
     pthread_attr_destroy(&attr);
 }
 
-void *worker(void *init_data) {
-    while(!finish) {
-        get_stream();
+static void *worker(void *init_data) {
+    while(poll(&host_socket_state, 1, POLL_WAIT_TIME)) {
+        if (!header_parsed) {
+            perror("header not yet parsed\n");
+            parse_http_response();
+        } else {
+            get_stream();
+        }
     }
 }
 
-void start_thread() {
+static void start_thread() {
     if (pthread_create(&thread, &attr, worker, NULL) != 0) {
         syserr("pthread_create");
     }
 }
 
-void listen_for_master_commands() {
-    printf("Listening...\n");
-    sleep(5);
+static void listen_for_master_commands() {
+    if (poll(&master_socket_state, 1, POLL_WAIT_TIME)) {
+        perror("Message form master arrived\n");
+    }
     return;
+}
+
+static void initialize_poll() {
+    host_socket_state.fd = host_socket;
+    host_socket_state.events = POLLIN;
+    master_socket_state.fd = master_socket;
+    master_socket_state.events = POLLIN;
 }
 
 int main (int argc, char **argv) {
@@ -158,11 +246,13 @@ int main (int argc, char **argv) {
     create_socket();
     connect_to_server();
     initialize_pthread_attr();
+    initialize_poll();
     send_header(argv[2], get_metadata);
+    reset_host_buffer();
     start_thread();
-    do {
+    while (!finish) {
         listen_for_master_commands();
-    } while(!finish);
+    }
     destroy_pthread_attr();
     close_dump_file();
     exit(EXIT_SUCCESS);
