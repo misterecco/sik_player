@@ -10,7 +10,7 @@ static int get_status_code(char* header_buffer) {
     return atoi(code);
 }
 
-static int get_metadata_length(config *c, char* header_buffer) {
+static size_t get_data_length(config *c, char *header_buffer) {
     char* data_length = strstr(header_buffer, "icy-metaint");
     if (!data_length) {
         perror("Server didn't sent icy-metaint value\n");
@@ -18,7 +18,7 @@ static int get_metadata_length(config *c, char* header_buffer) {
     }
     printf("Data length found: %s\n", data_length);
     long dl = atoi(&data_length[12]);
-    return (int) dl;
+    return (size_t) dl;
 }
 
 void get_header_from_buffer(buffer_state *bs, char *header_buffer) {
@@ -29,6 +29,7 @@ void get_header_from_buffer(buffer_state *bs, char *header_buffer) {
     }
     strncpy(header_buffer, bs->buf, header_end - bs->buf);
     memmove(bs->buf, header_end + 4, bs->length_read - strlen(header_buffer) - 4);
+    bs->length_read -= strlen(header_buffer) + 4;
 }
 
 void parse_icy_response(config *c, buffer_state *bs, char* hb) {
@@ -40,7 +41,18 @@ void parse_icy_response(config *c, buffer_state *bs, char* hb) {
         exit(EXIT_FAILURE);
     }
     if (c->get_metadata) {
-        c->to_read = get_metadata_length(c, hb);
-        printf("Metadata length: %d\n", c->to_read);
+        c->to_read = get_data_length(c, hb);
+        bs->to_read = c->to_read;
+        bs->reading_metadata = false;
+        printf("Metadata length: %ld\n", c->to_read);
+    }
+}
+
+// TODO: parse metadata and save title in appropriate buffer
+void get_title_from_metadata(buffer_state *bs) {
+    printf("gettitle input %s\n", bs->buf);
+    char *metadata = strstr(bs->buf, "StreamTitle");
+    if (metadata) {
+        printf("Metadata found: %s\n", metadata);
     }
 }

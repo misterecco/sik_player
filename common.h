@@ -11,7 +11,7 @@
 
 typedef struct buffer_state {
     ssize_t length_read;
-    ssize_t to_read;
+    size_t to_read;
     char buf[BUFFER_SIZE];
     char title[TITLE_SIZE];
     bool reading_metadata;

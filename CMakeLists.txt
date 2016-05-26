@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(sik_player)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O2 -std=gnu99 -DDEBUG -pthread")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O2 -std=gnu99 -pthread")
 
 set(SOURCE_FILES_PLAYER player.h  player.c player_network.c player_initizalize.c player_local.c player_parse.c)
 

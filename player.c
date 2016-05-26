@@ -29,20 +29,19 @@ static void reset_host_revents(socket_state *ss) {
     ss->host.revents = 0;
 }
 
-static void main_job() {
-    if (buffer.reading_metadata) {
-        get_metadata(&cfg, &buffer);
-    } else {
-        get_stream(&cfg, &buffer);
-    }
-}
-
 static void initialize_stream() {
     if (!cfg.header_parsed) {
         get_icy_response(&cfg, &buffer);
-    }
-    if (!cfg.metadata_synchronized) {
+    } else if (!cfg.metadata_synchronized) {
         synchronize_metadata(&cfg, &buffer);
+    }
+}
+
+static void main_job() {
+    if (cfg.get_metadata && buffer.reading_metadata) {
+        get_metadata(&cfg, &buffer);
+    } else {
+        get_stream(&cfg, &buffer);
     }
 }
 
@@ -57,7 +56,7 @@ static void do_poll() {
 }
 
 static void *worker(void *init_data) {
-    while(true) {
+    while(!cfg.finish) {
         reset_host_revents(&ss);
         do_poll();
         if (!cfg.header_parsed || !cfg.metadata_synchronized) {

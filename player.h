@@ -36,7 +36,7 @@ void prepare_icy_request(config *c, char *header, char *path);
 // player_network
 void connect_to_server(config *c, char *server_name, char *port);
 void send_icy_request(config *c, char* path);
-void reset_host_buffer(buffer_state *b);
+void reset_host_buffer(buffer_state *bs);
 void synchronize_metadata(config *c, buffer_state *bs);
 void get_stream(config *c, buffer_state *bs);
 void get_metadata(config *c, buffer_state *bs);
@@ -49,5 +49,6 @@ void close_dump_file(config *c);
 // player_parse
 void get_header_from_buffer(buffer_state *bs, char *header_buffer);
 void parse_icy_response(config *c, buffer_state *bs, char* hb);
+void get_title_from_metadata(buffer_state *bs);
 
 #endif //SIK_PLAYER_PLAYER_H
