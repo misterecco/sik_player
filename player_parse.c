@@ -72,3 +72,18 @@ void get_title_from_metadata(buffer_state *bs) {
     }
     copy_title_to_buffer(bs, stream_title);
 }
+
+int parse_master_request(config *c, buffer_state *bs, char* command) {
+    if (!memcmp(command, "PAUSE", 5) && strlen(command) == 5) {
+        c->is_paused = true;
+    } else if (!memcmp(command, "PLAY", 4) && strlen(command) == 4) {
+        c->is_paused = false;
+    } else if (!memcmp(command, "TITLE", 5) && strlen(command) == 5) {
+        return 1;
+    } else if (!memcmp(command, "QUIT", 4) && strlen(command) == 4) {
+        c->finish = true;
+    } else {
+        fprintf(stderr, "Unknown command: %s\n", command);
+    }
+    return 0;
+ }

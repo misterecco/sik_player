@@ -123,7 +123,7 @@ void get_icy_response(config *c, buffer_state *bs) {
     }
     parse_icy_response(c, bs, header_buffer);
     if (!c->get_metadata) {
-        if (write(c->dump_fd, bs->buf, (size_t) bs->length_read) < 0) {
+        if (!c->is_paused && write(c->dump_fd, bs->buf, (size_t) bs->length_read) < 0) {
             syserr("write");
         }
         bs->length_read = 0;
@@ -165,7 +165,7 @@ void get_stream(config *c, buffer_state *bs) {
     ssize_t lr = read(c->host_socket, bs->buf, bs->to_read - bs->length_read);
     bs->length_read += lr;
     validate_read_value(lr);
-    if (write(c->dump_fd, &bs->buf, (size_t) lr) < 0) {
+    if (!c->is_paused && write(c->dump_fd, &bs->buf, (size_t) lr) < 0) {
         syserr("write");
     }
     if (bs->to_read == bs->length_read) {
@@ -195,14 +195,19 @@ void bind_datagram_socket(config *c, int port) {
 
 // TODO: parse commands and handle them
 void get_master_command(config *c, buffer_state *bs) {
+    char buffer[65000];
+    memset(buffer, 0, sizeof(buffer));
     struct sockaddr_in client_address;
     socklen_t rcva_len = (socklen_t) sizeof(client_address);
-    int flags = 0;
-    ssize_t len = recvfrom(c->master_socket, bs->buf, sizeof(bs->buf), flags,
+    ssize_t len = recvfrom(c->master_socket, buffer, sizeof(buffer), 0,
                    (struct sockaddr *) &client_address, &rcva_len);
     if (len < 0) {
-        syserr("error on datagram from client socket");
+        syserr("error on master datagram socket");
     } else {
-        printf("read from socket: %zd bytes: %.*s\n", len, (int)len, bs->buf);
+        printf("read from socket: %zd bytes: %.*s\n", len, (int)len, buffer);
+        if (parse_master_request(c, bs, buffer)) {
+            sendto(c->master_socket, bs->title, strlen(bs->title),
+                0, &client_address, rcva_len);
+        }
     }
 }

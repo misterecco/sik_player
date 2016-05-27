@@ -55,5 +55,6 @@ void get_header_from_buffer(buffer_state *bs, char *header_buffer);
 void parse_icy_response(config *c, buffer_state *bs, char* hb);
 void get_title_from_metadata(buffer_state *bs);
 void copy_title_to_buffer(buffer_state *bs, char* stream_title);
+int parse_master_request(config *c, buffer_state *bs, char* command);
 
 #endif //SIK_PLAYER_PLAYER_H

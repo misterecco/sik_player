@@ -10,7 +10,6 @@ static pthread_t thread;
 static pthread_attr_t attr;
 
 static buffer_state host_buffer;
-static buffer_state master_buffer;
 static config cfg;
 static socket_state ss;
 
@@ -78,7 +77,7 @@ static void start_thread() {
 static void listen_for_master_commands() {
     int poll_ret = poll(&ss.master, 1, POLL_WAIT_TIME);
     if (poll_ret > 0) {
-        get_master_command(&cfg, &master_buffer);
+        get_master_command(&cfg, &host_buffer);
     } else if (poll_ret < 0) {
         syserr("poll");
     }
@@ -94,7 +93,6 @@ static void close_sockets(config *c) {
     }
 }
 
-// TODO: close sockets on exit
 int main (int argc, char **argv) {
     init_config(&cfg);
     validate_arguments_number(argc, argv);
