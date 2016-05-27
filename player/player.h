@@ -3,11 +3,24 @@
 
 #include <stdbool.h>
 #include <poll.h>
+#include <stdint.h>
 #include <netdb.h>
-#include "err.h"
-#include "common.h"
+#include "../libs/err.h"
+
+#define BUFFER_SIZE 128 * 1024
+#define TITLE_SIZE 255 * 16
+#define POLL_WAIT_TIME 5000
+#define POLL_REVENTS POLLHUP | POLLIN | POLLERR
 
 // data structures
+
+typedef struct buffer_state {
+    ssize_t length_read;
+    size_t to_read;
+    char buf[BUFFER_SIZE];
+    char title[TITLE_SIZE];
+    bool reading_metadata;
+} buffer_state;
 
 typedef struct socket_state {
     struct pollfd host;

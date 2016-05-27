@@ -206,6 +206,7 @@ void get_master_command(config *c, buffer_state *bs) {
     } else {
         printf("read from socket: %zd bytes: %.*s\n", len, (int)len, buffer);
         if (parse_master_request(c, bs, buffer)) {
+            // TODO: test this line
             sendto(c->master_socket, bs->title, strlen(bs->title),
                 0, &client_address, rcva_len);
         }
