@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <memory.h>
 #include "player.h"
 
 #define _GNU_SOURCE
@@ -171,5 +170,39 @@ void get_stream(config *c, buffer_state *bs) {
     }
     if (bs->to_read == bs->length_read) {
         switch_reading_metadata(c, bs);
+    }
+}
+
+// ============= MASTER =======================
+
+void create_datagram_socket(config *c) {
+    c->master_socket = socket(AF_INET, SOCK_DGRAM, 0);
+    if (c->master_socket < 0) {
+        syserr("socket");
+    }
+}
+
+void bind_datagram_socket(config *c, int port) {
+    struct sockaddr_in server_address;
+    server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = htonl(INADDR_ANY);
+    server_address.sin_port = htons(port);
+    if (bind(c->master_socket , (struct sockaddr *) &server_address,
+             (socklen_t) sizeof(server_address)) < 0) {
+        syserr("bind");
+    }
+}
+
+// TODO: parse commands and handle them
+void get_master_command(config *c, buffer_state *bs) {
+    struct sockaddr_in client_address;
+    socklen_t rcva_len = (socklen_t) sizeof(client_address);
+    int flags = 0;
+    ssize_t len = recvfrom(c->master_socket, bs->buf, sizeof(bs->buf), flags,
+                   (struct sockaddr *) &client_address, &rcva_len);
+    if (len < 0) {
+        syserr("error on datagram from client socket");
+    } else {
+        printf("read from socket: %zd bytes: %.*s\n", len, (int)len, bs->buf);
     }
 }

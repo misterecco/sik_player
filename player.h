@@ -42,6 +42,10 @@ void get_stream(config *c, buffer_state *bs);
 void get_metadata(config *c, buffer_state *bs);
 void get_icy_response(config *c, buffer_state *bs);
 
+void create_datagram_socket(config *c);
+void bind_datagram_socket(config *c, int port);
+void get_master_command(config *c, buffer_state *bs);
+
 // player_local
 void open_dump_file(config *c, char *filepath);
 void close_dump_file(config *c);

@@ -2,13 +2,15 @@
 #include <stdlib.h>
 #include <poll.h>
 #include <pthread.h>
+#include <unistd.h>
 #include "player.h"
 
 
 static pthread_t thread;
 static pthread_attr_t attr;
 
-static buffer_state buffer;
+static buffer_state host_buffer;
+static buffer_state master_buffer;
 static config cfg;
 static socket_state ss;
 
@@ -31,17 +33,17 @@ static void reset_host_revents(socket_state *ss) {
 
 static void initialize_stream() {
     if (!cfg.header_parsed) {
-        get_icy_response(&cfg, &buffer);
+        get_icy_response(&cfg, &host_buffer);
     } else if (!cfg.metadata_synchronized) {
-        synchronize_metadata(&cfg, &buffer);
+        synchronize_metadata(&cfg, &host_buffer);
     }
 }
 
 static void main_job() {
-    if (cfg.get_metadata && buffer.reading_metadata) {
-        get_metadata(&cfg, &buffer);
+    if (cfg.get_metadata && host_buffer.reading_metadata) {
+        get_metadata(&cfg, &host_buffer);
     } else {
-        get_stream(&cfg, &buffer);
+        get_stream(&cfg, &host_buffer);
     }
 }
 
@@ -73,29 +75,44 @@ static void start_thread() {
     }
 }
 
-//TODO: move to network file
 static void listen_for_master_commands() {
-    if (poll(&ss.master, 1, POLL_WAIT_TIME)) {
-        fprintf(stderr, "Message form master arrived\n");
+    int poll_ret = poll(&ss.master, 1, POLL_WAIT_TIME);
+    if (poll_ret > 0) {
+        get_master_command(&cfg, &master_buffer);
+    } else if (poll_ret < 0) {
+        syserr("poll");
     }
     return;
 }
 
+static void close_sockets(config *c) {
+    if (close(c->master_socket) < 0) {
+        syserr("close");
+    }
+    if (close(c->host_socket) < 0) {
+        syserr("close");
+    }
+}
+
+// TODO: close sockets on exit
 int main (int argc, char **argv) {
     init_config(&cfg);
     validate_arguments_number(argc, argv);
     open_dump_file(&cfg, argv[4]);
     set_get_metadata(&cfg, argv[6]);
     connect_to_server(&cfg, argv[1], argv[3]);
+    create_datagram_socket(&cfg);
+    bind_datagram_socket(&cfg, atoi(argv[5]));
     initialize_pthread_attr();
     initialize_poll(cfg, &ss);
     send_icy_request(&cfg, argv[2]);
-    reset_host_buffer(&buffer);
+    reset_host_buffer(&host_buffer);
     start_thread();
     while (!cfg.finish) {
         listen_for_master_commands();
     }
     destroy_pthread_attr();
     close_dump_file(&cfg);
+    close_sockets(&cfg);
     exit(EXIT_SUCCESS);
 }
