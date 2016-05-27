@@ -45,14 +45,30 @@ void parse_icy_response(config *c, buffer_state *bs, char* hb) {
         bs->to_read = c->to_read;
         bs->reading_metadata = false;
         printf("Metadata length: %ld\n", c->to_read);
+    } else {
+        bs->to_read = BUFFER_SIZE;
     }
 }
 
-// TODO: parse metadata and save title in appropriate buffer
-void get_title_from_metadata(buffer_state *bs) {
-    printf("gettitle input %s\n", bs->buf);
-    char *metadata = strstr(bs->buf, "StreamTitle");
-    if (metadata) {
-        printf("Metadata found: %s\n", metadata);
+void copy_title_to_buffer(buffer_state *bs, char* stream_title) {
+    char *stream_url = strstr(stream_title, "';StreamUrl");
+    if (!stream_url) {
+        fprintf(stderr, "No StreamUrlnike. where it was expected\n");
+        exit(EXIT_FAILURE);
     }
+    memset(bs->title, 0, TITLE_SIZE);
+    stream_url[0] = '\0';
+    strcpy(bs->title, stream_title + 13);
+}
+
+void get_title_from_metadata(buffer_state *bs) {
+    char *stream_title = strstr(bs->buf, "StreamTitle");
+    if (!stream_title) {
+        return;
+    }
+    if (stream_title != bs->buf) {
+        fprintf(stderr, "No StreamTitle where it was expected\n");
+        exit(EXIT_FAILURE);
+    }
+    copy_title_to_buffer(bs, stream_title);
 }

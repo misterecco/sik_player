@@ -68,12 +68,9 @@ void reset_host_buffer(buffer_state *bs) {
     memset(bs->buf, 0, sizeof(bs->buf));
 }
 
-void reset_title_buffer(buffer_state *bs) {
-    memset(bs->title, 0, sizeof(bs->title));
-}
-
 void switch_reading_metadata(config *c, buffer_state *bs) {
     if (!c->get_metadata) {
+        bs->length_read = 0;
         return;
     }
     if (bs->reading_metadata) {
@@ -88,7 +85,6 @@ void switch_reading_metadata(config *c, buffer_state *bs) {
     }
 }
 
-// TODO: write bytes left from synchro into file
 void synchronize_metadata(config *c, buffer_state *bs) {
     ssize_t lr = read(c->host_socket,
                       (bs->buf + bs->length_read),
@@ -104,9 +100,14 @@ void synchronize_metadata(config *c, buffer_state *bs) {
     printf("Metadata found, length: %d, string: %s\n", metadata_len, metadata);
     c->metadata_synchronized = true;
     bs->length_read = bs->length_read - metadata_position - metadata_len;
+    copy_title_to_buffer(bs, metadata);
     memmove(bs->buf,
             metadata + metadata_len,
             (size_t) bs->length_read);
+    if (write(c->dump_fd, bs->buf, (size_t) bs->length_read) < 0) {
+        syserr("write");
+    }
+    printf("First title: %s\n", bs->title);
     return;
 }
 
@@ -122,13 +123,18 @@ void get_icy_response(config *c, buffer_state *bs) {
         return;
     }
     parse_icy_response(c, bs, header_buffer);
+    if (!c->get_metadata) {
+        if (write(c->dump_fd, bs->buf, (size_t) bs->length_read) < 0) {
+            syserr("write");
+        }
+        bs->length_read = 0;
+    }
 }
 
 void read_metadata_length(config *c, buffer_state *bs) {
     ssize_t lr = read(c->host_socket, &bs->buf, 1);
     validate_read_value(lr);
     bs->to_read = (size_t) bs->buf[0] * 16;
-    printf("Metadata length: %ld\n", bs->to_read);
 }
 
 void read_metadata(config *c, buffer_state *bs) {
@@ -157,10 +163,12 @@ void get_metadata(config *c, buffer_state *bs) {
 
 void get_stream(config *c, buffer_state *bs) {
     reset_host_buffer(bs);
-    ssize_t lr = read(c->host_socket, &bs->buf, bs->to_read - bs->length_read);
+    ssize_t lr = read(c->host_socket, bs->buf, bs->to_read - bs->length_read);
     bs->length_read += lr;
     validate_read_value(lr);
-    write(c->dump_fd, &bs->buf, (size_t) lr);
+    if (write(c->dump_fd, &bs->buf, (size_t) lr) < 0) {
+        syserr("write");
+    }
     if (bs->to_read == bs->length_read) {
         switch_reading_metadata(c, bs);
     }

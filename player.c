@@ -76,7 +76,7 @@ static void start_thread() {
 //TODO: move to network file
 static void listen_for_master_commands() {
     if (poll(&ss.master, 1, POLL_WAIT_TIME)) {
-        perror("Message form master arrived\n");
+        fprintf(stderr, "Message form master arrived\n");
     }
     return;
 }
