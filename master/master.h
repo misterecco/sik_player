@@ -4,13 +4,15 @@
 #include <stdbool.h>
 #include <poll.h>
 #include "../libs/err.h"
+#include "../libs/common.h"
 
 #define LIST_INIT_SIZE 2
 #define POLL_REFRESH_TIME 3000
 #define BUFFER_SIZE 8 * 1024
 
 typedef struct player_state {
-    int id; // == port number
+    int id;
+    int socket;
     bool is_scheduled;
 } player_state;
 

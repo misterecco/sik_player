@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/fcntl.h>
 #include "player.h"
 
 #define _GNU_SOURCE
@@ -26,13 +27,11 @@ static void set_host_addr_hints(struct addrinfo *host_addr_hints) {
     host_addr_hints->ai_protocol = IPPROTO_TCP;
 }
 
-//TODO: validate server name and port
 static void get_server_address(char *server_name, char* port,
                                struct addrinfo *host_addr_hints, struct addrinfo **host_addr_result) {
     set_host_addr_hints(host_addr_hints);
     int rc =  getaddrinfo(server_name, port, host_addr_hints, host_addr_result);
     if (rc != 0) {
-        fprintf(stderr, "rc=%d\n", rc);
         syserr("getaddrinfo: %s", gai_strerror(rc));
     }
 }

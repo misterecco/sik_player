@@ -17,7 +17,7 @@ void init_config(config *cfg) {
 };
 
 void validate_arguments_number(int argc, char **argv) {
-    if (argc != 7) {
+    if (argc != 7 || !is_port_number_valid(argv[3]) || !is_port_number_valid(argv[5])) {
         fatal("Usage: %s host path r-port file m-port md\n", argv[0]);
     }
 }

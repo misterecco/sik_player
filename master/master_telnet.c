@@ -80,6 +80,7 @@ static void check_client(telnet_list *tl, int cn) {
         return;
     }
     printf("Message received from telnet client number %d: %s\n", cn, buffer);
+    parse_telnet_command(buffer);
 }
 
 void handle_client_messages(telnet_list *tl) {
