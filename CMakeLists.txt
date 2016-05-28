@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(sik_player)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
+
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O2 -std=gnu99 -pthread -fsanitize=address -fsanitize=undefined")
 
 set(SOURCE_FILES_PLAYER player/player.h player/player.c player/player_network.c player/player_initizalize.c player/player_local.c player/player_parse.c)

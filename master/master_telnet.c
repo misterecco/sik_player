@@ -62,6 +62,7 @@ void close_client_socket(telnet_list *tl, int cn) {
     printf("Closed telnet connection with client %d\n", cn);
 }
 
+// TODO: parse commands and handle them
 static void check_client(telnet_list *tl, int cn) {
     ssize_t rval;
     char buffer[BUFFER_SIZE];

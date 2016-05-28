@@ -47,7 +47,6 @@ void set_get_metadata(config *c, char* choice) {
 void prepare_icy_request(config *c, char *header, char *path) {
     sprintf(header,
             "GET %s HTTP/1.0\r\n"
-                    "User-Agent: MPlayer 2.0-728-g2c378c7-4build1\r\n"
                     "Accept: */*\r\n"
                     "Icy-MetaData: %d\r\n"
                     "Connection: close\r\n"
