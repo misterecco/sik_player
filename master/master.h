@@ -44,4 +44,10 @@ void accept_new_client(telnet_list *tl);
 void close_client_socket(telnet_list *tl, int cn);
 void handle_client_messages(telnet_list *tl);
 
+// master_ssh
+void run_ssh();
+
+// master_time
+int calculate_sleep_time(char *time);
+
 #endif //SIK_PLAYER_MASTER_H

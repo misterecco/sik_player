@@ -19,7 +19,6 @@ void init_config(config *cfg) {
 void validate_arguments_number(int argc, char **argv) {
     if (argc != 7) {
         fatal("Usage: %s host path r-port file m-port md\n", argv[0]);
-        exit(EXIT_FAILURE);
     }
 }
 

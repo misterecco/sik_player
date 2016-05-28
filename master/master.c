@@ -27,6 +27,8 @@ int main(int argc, char **argv) {
     bind_port_to_socket(&tl, &c);
     listen_on_central_socket(&tl);
 
+    run_ssh();
+
     do {
         do_poll();
     } while (true);
