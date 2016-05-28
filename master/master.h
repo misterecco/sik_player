@@ -27,7 +27,7 @@ typedef struct config {
 } config;
 
 // master_initialize
-void validate_number_of_arguments(int argc, char **argv);
+void validate_arguments(int argc, char **argv);
 void initialize_config(config *c);
 
 // master_telnet_list
@@ -51,5 +51,8 @@ void run_ssh();
 
 // master_time
 int calculate_sleep_time(char *time);
+
+// master_parse
+void parse_telnet_command(char* buffer);
 
 #endif //SIK_PLAYER_MASTER_H

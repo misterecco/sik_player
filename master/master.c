@@ -20,7 +20,27 @@ static void do_poll() {
 }
 
 int main(int argc, char **argv) {
-    validate_number_of_arguments(argc, argv);
+
+    validate_arguments(argc, argv);
+
+    char bufferAT[] = "AT 10.10 50 localhost "
+            "ant-waw-01.cdn.eurozet.pl / 8600 test5.mp3 50000 yes";
+    char bufferSTART[] = "START localhost "
+            "ant-waw-01.cdn.eurozet.pl / 8600 test5.mp3 50000 yes";
+    char bufferPLAY[] = "PLAY 100";
+    char bufferPAUSE[] = "PAUSE 100";
+    char bufferTITLE[] = "TITLE 100";
+    char bufferQUIT[] = "QUIT 100";
+    parse_telnet_command(bufferAT);
+    parse_telnet_command(bufferSTART);
+    parse_telnet_command(bufferPLAY);
+    parse_telnet_command(bufferPAUSE);
+    parse_telnet_command(bufferTITLE);
+    parse_telnet_command(bufferQUIT);
+    parse_telnet_command("fdsfhdasgh");
+
+    exit(EXIT_SUCCESS);
+
     initialize_config(&c);
     telnet_list_initialize(&tl);
     create_central_socket(&tl);
