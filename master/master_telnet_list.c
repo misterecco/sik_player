@@ -60,13 +60,15 @@ void telnet_list_initialize(telnet_list *tl) {
     }
 }
 
-void telnet_list_add(telnet_list *tl, int fd) {
+int telnet_list_add(telnet_list *tl, int fd) {
     if (tl->length == tl->max_length) {
         telnet_list_grow(tl);
     }
     tl->data[tl->length].fd = fd;
-    tl->state[tl->length].id = get_next_id();
+    int id = get_next_id();
+    tl->state[tl->length].id = id;
     tl->length += 1;
+    return id;
 }
 
 void telnet_list_delete(telnet_list *tl, int index) {

@@ -17,6 +17,12 @@ typedef struct player_state {
     bool is_scheduled;
 } player_state;
 
+typedef struct player_list {
+    size_t length;
+    size_t max_length;
+    player_state *data;
+} player_list;
+
 typedef struct telnet_state {
     int id;
     int length_read;
@@ -39,11 +45,19 @@ void validate_arguments(int argc, char **argv);
 void initialize_config(config *c, int argc, char **argv);
 
 // master_telnet_list
-void telnet_list_initialize(telnet_list *tl);
-void telnet_list_add(telnet_list *tl, int fd);
+void telnet_list_initialize(telnet_list *pl);
+int telnet_list_add(telnet_list *tl, int fd);
 void telnet_list_delete(telnet_list *tl, int index);
 void telnet_list_destroy(telnet_list *tl);
 void telnet_list_print(telnet_list *tl);
+
+// master_player_list
+void player_list_initialize(player_list *pl);
+int player_list_find_by_id(player_list *pl, int id);
+int player_list_add(player_list *pl, int sock, int telnet_id);
+void player_list_delete(player_list *pl, int id);
+void player_list_destroy(player_list *pl);
+void player_list_print(player_list *pl);
 
 // master_telnet
 void create_central_socket(telnet_list *tl);

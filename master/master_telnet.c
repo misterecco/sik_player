@@ -16,15 +16,6 @@ static int get_random_port_number() {
     return number + 10000;
 }
 
-void create_central_socket(telnet_list *tl) {
-    int sock = socket(PF_INET, SOCK_STREAM, 0);
-    if (sock< 0) {
-        perror("Opening stream socket");
-        exit(EXIT_FAILURE);
-    }
-    telnet_list_add(tl, sock);
-}
-
 static void bind_given_port(telnet_list *tl, config *c, struct sockaddr_in *server) {
     server->sin_port = htons(c->connection_port);
     if (bind(tl->data[0].fd, (struct sockaddr*)server,
@@ -47,6 +38,15 @@ static void bind_random_port(telnet_list *tl, config *c, struct sockaddr_in *ser
             return;
         }
     }
+}
+
+void create_central_socket(telnet_list *tl) {
+    int sock = socket(PF_INET, SOCK_STREAM, 0);
+    if (sock< 0) {
+        perror("Opening stream socket");
+        exit(EXIT_FAILURE);
+    }
+    telnet_list_add(tl, sock);
 }
 
 void bind_port_to_socket(telnet_list *tl, config *c) {
