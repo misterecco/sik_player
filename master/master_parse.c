@@ -14,13 +14,13 @@ bool validate_start(player_args *pa, char *buffer) {
     if (rc != 8) {
         fprintf(stderr, "START command incorrect\n");
         return false;
-    } else {
-        printf("Command START\n");
-        return true;
     }
+    printf("Command START\n");
+    return true;
 }
 
-bool validate_at(player_args *pa, char *buffer) {
+// TODO: player should not run for less than 1 minut
+bool validate_at(player_args *pa, char *buffer, int *ts, int *tq) {
     char command[BUFFER_SIZE];
     char time_start[BUFFER_SIZE];
     char time_length[BUFFER_SIZE];
@@ -33,10 +33,14 @@ bool validate_at(player_args *pa, char *buffer) {
     if (rc != 10) {
         fprintf(stderr, "AT command incorrect\n");
         return false;
-    } else {
-        printf("Command AT\n");
-        return true;
     }
+    *ts = calculate_sleep_time(time_start);
+    if (!is_digits_only(time_length) || *ts < 0) {
+        return false;
+    }
+    *tq = *ts + atoi(time_length) * 60;
+    printf("Command AT\n");
+    return true;
 }
 
 bool player_with_id_exists(player_list *pl, int id) {
@@ -116,7 +120,12 @@ void parse_telnet_command(telnet_list *tl, player_list *pl,
             // fail
         }
     } else if (!strcmp(command, "AT")) {
-        validate_at(&pa, buffer);
+        int start_time, quit_time;
+        if (validate_at(&pa, buffer, &start_time, &quit_time)) {
+            at_command(tl, pl, &pa, telnet_id, start_time, quit_time);
+        } else {
+            // fail
+        }
     } else if (!strcmp(command, "PLAY")) {
         validate_play(pl, buffer);
     } else if (!strcmp(command, "PAUSE")) {

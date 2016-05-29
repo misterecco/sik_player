@@ -16,11 +16,9 @@ typedef struct player_state {
     int telnet_id;
     int socket;
     char computer[BUFFER_SIZE];
-    // If true the player is not running but is planned to start
-    bool is_scheduled;
-    // The player was planned to start but got QUIT command and will not start
-    bool is_cancelled;
-    pthread_t thread;
+    pthread_t start_thread;
+    pthread_t quit_thread;
+    pthread_t title_thread;
 } player_state;
 
 typedef struct player_args {
@@ -106,5 +104,10 @@ void parse_telnet_command(telnet_list *tl, player_list *pl,
 
 // master_commands
 void start_command(telnet_list *tl, player_list *pl, player_args *pa, int telnet_id);
+void at_command(telnet_list *tl, player_list *pl, player_args *pa, int telnet_id, int ts, int tq);
+void do_quit(player_list *pl, int id);
+void do_pause(player_list *pl, int id);
+void do_play(player_list *pl, int id);
+void do_title(player_list *pl, int id);
 
 #endif //SIK_PLAYER_MASTER_H

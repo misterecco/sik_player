@@ -32,6 +32,7 @@ void get_header_from_buffer(buffer_state *bs, char *header_buffer) {
     bs->length_read -= strlen(header_buffer) + 4;
 }
 
+// TODO: check if server response starts with ICY
 void parse_icy_response(config *c, buffer_state *bs, char* hb) {
     printf("header: \n%s\n", hb);
     c->header_parsed = true;

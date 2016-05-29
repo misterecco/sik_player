@@ -59,7 +59,7 @@ void *quit_thread(void *init_data) {
     thread_data data = *(thread_data *) init_data;
     free(init_data);
     sleep((unsigned int) data.sleep_time);
-    // do_quit
+    do_quit(data.pl, data.id);
     return 0;
 }
 
@@ -86,7 +86,8 @@ void run_thread(telnet_list *tl, player_list *pl,
         return; // TODO: handle this
     }
     printf("running thread\n");
-    if (pthread_create(&(pl->data[index].thread), &attr, start_routine, (void *)data) != 0) {
+    // TODO: 3 thread fields instead of 1
+    if (pthread_create(&(pl->data[index].start_thread), &attr, start_routine, (void *)data) != 0) {
         perror("pthread_create");
     }
 }
@@ -114,11 +115,9 @@ int main(int argc, char **argv) {
     listen_on_central_socket(&tl);
     initialize_pthread_attr();
 
-    int c = 0;
     do {
         do_poll();
-        c++;
-    } while (c < 30);
+    } while (true);
 
     telnet_list_print(&tl);
     player_list_print(&pl);

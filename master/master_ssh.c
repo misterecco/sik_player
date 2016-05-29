@@ -21,6 +21,3 @@ void run_ssh(player_args *pa) {
 
     printf("Exit status: %d\n", pclose(fd) / 256);
 }
-
-
-

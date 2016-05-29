@@ -43,6 +43,38 @@ static int add_player(player_list *pl, player_args *pa, int telnet_id) {
     return player_list_add(pl, sock, telnet_id);
 }
 
+static void send_message_to_player(int sock, char* message) {
+    size_t len = strlen(message);
+    ssize_t rc = write(sock, message, len);
+    if (rc < len) {
+        perror("write");
+    }
+}
+
+static void do_simple_command(player_list *pl, int id, char* command) {
+    int index = player_list_find_by_id(pl, id);
+    if (index < 0) {
+        return;
+    }
+    send_message_to_player(pl->data[index].socket, command);
+}
+
+void do_quit(player_list *pl, int id) {
+    do_simple_command(pl, id, "QUIT");
+}
+
+void do_pause(player_list *pl, int id) {
+    do_simple_command(pl, id, "PAUSE");
+}
+
+void do_play(player_list *pl, int id) {
+    do_simple_command(pl, id, "PLAY");
+}
+
+void do_title(player_list *pl, int id) {
+    do_simple_command(pl, id, "TITLE");
+}
+
 // TODO: handle failure
 void start_command(telnet_list *tl, player_list *pl, player_args *pa, int telnet_id) {
     int id = add_player(pl, pa, telnet_id);
@@ -53,6 +85,12 @@ void start_command(telnet_list *tl, player_list *pl, player_args *pa, int telnet
     send_message_to_client(tl, telnet_id, message);
 }
 
-void at_command() {
-
+void at_command(telnet_list *tl, player_list *pl, player_args *pa, int telnet_id, int ts, int tq) {
+    int id = add_player(pl, pa, telnet_id);
+    run_thread(tl, pl, pa, id, ts, start_thread);
+    char message[10];
+    memset(message, 0, sizeof(message));
+    sprintf(message, "OK %d", id);
+    send_message_to_client(tl, telnet_id, message);
+    run_thread(tl, pl, pa, id, tq, quit_thread);
 }

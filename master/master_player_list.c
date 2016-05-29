@@ -15,9 +15,9 @@ static void player_list_reset_item(player_list *pl, int i) {
     pl->data[i].id = -1;
     pl->data[i].telnet_id = -1;
     pl->data[i].socket = -1;
-    pl->data[i].is_scheduled = false;
-    pl->data[i].is_cancelled = false;
-    pl->data[i].thread = 0;
+    pl->data[i].start_thread = 0;
+    pl->data[i].quit_thread = 0;
+    pl->data[i].title_thread = 0;
     memset(pl->data[i].computer, 0, sizeof(pl->data[i].computer));
 }
 
