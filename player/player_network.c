@@ -14,8 +14,7 @@ static void validate_read_value(ssize_t lr) {
     if (lr < 0) {
         syserr("read");
     } else if (lr == 0) {
-        perror("Host server ended connection\n");
-        exit(EXIT_FAILURE);
+        exit(EXIT_SUCCESS);
     }
 }
 
@@ -56,7 +55,6 @@ void connect_to_server(config *c, char *server_name, char *port) {
 void send_icy_request(config *c, char *path) {
     char header[10000];
     prepare_icy_request(c, header, path);
-    printf("Sent header:\n%s", header);
     if (write(c->host_socket, &header, sizeof(header)) < 0) {
         syserr("write");
     }
@@ -83,32 +81,6 @@ void switch_reading_metadata(config *c, buffer_state *bs) {
     }
 }
 
-void synchronize_metadata(config *c, buffer_state *bs) {
-    ssize_t lr = read(c->host_socket,
-                      (bs->buf + bs->length_read),
-                      BUFFER_SIZE - (size_t) bs->length_read);
-    validate_read_value(lr);
-    bs->length_read += lr;
-    char *metadata = memmem(bs->buf, BUFFER_SIZE, "StreamTitle", 11);
-    if (!metadata) {
-        return;
-    }
-    int metadata_len = metadata[-1] * 16;
-    int metadata_position = (int) (metadata - bs->buf);
-    printf("Metadata found, length: %d, string: %s\n", metadata_len, metadata);
-    c->metadata_synchronized = true;
-    bs->length_read = bs->length_read - metadata_position - metadata_len;
-    copy_title_to_buffer(bs, metadata);
-    memmove(bs->buf,
-            metadata + metadata_len,
-            (size_t) bs->length_read);
-    if (write(c->dump_fd, bs->buf, (size_t) bs->length_read) < 0) {
-        syserr("write");
-    }
-    printf("First title: %s\n", bs->title);
-    return;
-}
-
 void get_icy_response(config *c, buffer_state *bs) {
     char header_buffer[BUFFER_SIZE];
     ssize_t lr = read(c->host_socket,
@@ -125,7 +97,6 @@ void get_icy_response(config *c, buffer_state *bs) {
         if (!c->is_paused && write(c->dump_fd, bs->buf, (size_t) bs->length_read) < 0) {
             syserr("write");
         }
-        bs->length_read = 0;
     }
 }
 
@@ -172,8 +143,6 @@ void get_stream(config *c, buffer_state *bs) {
     }
 }
 
-// ============= MASTER =======================
-
 void create_datagram_socket(config *c) {
     c->master_socket = socket(AF_INET, SOCK_DGRAM, 0);
     if (c->master_socket < 0) {
@@ -192,7 +161,6 @@ void bind_datagram_socket(config *c, int port) {
     }
 }
 
-// TODO: parse commands and handle them
 void get_master_command(config *c, buffer_state *bs) {
     char buffer[65000];
     memset(buffer, 0, sizeof(buffer));
@@ -203,11 +171,9 @@ void get_master_command(config *c, buffer_state *bs) {
     if (len < 0) {
         syserr("error on master datagram socket");
     } else {
-        printf("read from socket: %zd bytes: %.*s\n", len, (int)len, buffer);
         if (parse_master_request(c, bs, buffer)) {
-            // TODO: test this line
             sendto(c->master_socket, bs->title, strlen(bs->title),
-                0, &client_address, rcva_len);
+                0, (struct sockaddr *) &client_address, rcva_len);
         }
     }
 }

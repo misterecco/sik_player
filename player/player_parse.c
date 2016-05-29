@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include "player.h"
 
-
 static int get_status_code(char* header_buffer) {
     char code[4];
     strncpy(code, &header_buffer[4], 3);
@@ -13,16 +12,15 @@ static int get_status_code(char* header_buffer) {
 static size_t get_data_length(config *c, char *header_buffer) {
     char* data_length = strstr(header_buffer, "icy-metaint");
     if (!data_length) {
-        perror("Server didn't sent icy-metaint value\n");
+        fatal("Server didn't sent icy-metaint value");
         exit(EXIT_FAILURE);
     }
-    printf("Data length found: %s\n", data_length);
     long dl = atoi(&data_length[12]);
     return (size_t) dl;
 }
 
 void get_header_from_buffer(buffer_state *bs, char *header_buffer) {
-    memset(header_buffer, 0, sizeof(header_buffer));
+    memset(header_buffer, 0, BUFFER_SIZE);
     char* header_end = strstr(bs->buf, "\r\n\r\n");
     if (!header_end) {
         return;
@@ -32,9 +30,11 @@ void get_header_from_buffer(buffer_state *bs, char *header_buffer) {
     bs->length_read -= strlen(header_buffer) + 4;
 }
 
-// TODO: check if server response starts with ICY
 void parse_icy_response(config *c, buffer_state *bs, char* hb) {
-    printf("header: \n%s\n", hb);
+    if (strncmp(hb, "ICY ", 4)) {
+        fatal("Connected to non-shoutcast server, ending connection");
+        exit(EXIT_FAILURE);
+    }
     c->header_parsed = true;
     int http_response_code = get_status_code(hb);
     if (http_response_code != 200) {
@@ -45,7 +45,10 @@ void parse_icy_response(config *c, buffer_state *bs, char* hb) {
         c->to_read = get_data_length(c, hb);
         bs->to_read = c->to_read;
         bs->reading_metadata = false;
-        printf("Metadata length: %ld\n", c->to_read);
+        if (c->to_read > BUFFER_SIZE) {
+            fatal("icy-metaint has suspiciously large value, ending connection");
+            exit(EXIT_FAILURE);
+        }
     } else {
         bs->to_read = BUFFER_SIZE;
     }
@@ -54,7 +57,7 @@ void parse_icy_response(config *c, buffer_state *bs, char* hb) {
 void copy_title_to_buffer(buffer_state *bs, char* stream_title) {
     char *stream_url = strstr(stream_title, "';StreamUrl");
     if (!stream_url) {
-        fprintf(stderr, "No StreamUrlnike. where it was expected\n");
+        fprintf(stderr, "No StreamUrl where it was expected\n");
         exit(EXIT_FAILURE);
     }
     memset(bs->title, 0, TITLE_SIZE);

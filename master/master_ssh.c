@@ -3,7 +3,7 @@
 #include "master.h"
 
 static void get_ssh_command(char *command, player_args *pa) {
-    memset(command, 0, sizeof(command));
+    memset(command, 0, BUFFER_SIZE * 16);
     sprintf(command, "ssh %s \"bash -l -c \'player %s %s %s %s %s %s 3>&2 2>&1 1>&3\'\"",
             pa->computer, pa->host, pa->path,
             pa->r_port, pa->file, pa->m_port, pa->md);
