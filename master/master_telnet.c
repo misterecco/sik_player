@@ -9,9 +9,7 @@
 #include "master.h"
 
 static int get_random_port_number() {
-    /* initialize random seed: */
     srand ((unsigned int) time(NULL));
-    /* Generate a random number: */
     int number = rand() % 40000;
     return number + 10000;
 }
@@ -112,7 +110,7 @@ static void check_client(telnet_list *tl, int cn) {
         return;
     }
     printf("Message received from telnet client number %d: %s\n", cn, buffer);
-    parse_telnet_command(buffer);
+//    parse_telnet_command(tl, buffer);
 }
 
 void handle_client_messages(telnet_list *tl) {

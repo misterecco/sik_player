@@ -1,21 +1,16 @@
 #include <stdio.h>
-#include "master.h"
 #include <string.h>
 #include <stdlib.h>
+#include "master.h"
 
-void parse_start(char *buffer) {
+void validate_start(player_list *pl, char *buffer) {
     char command[BUFFER_SIZE];
-    char computer[BUFFER_SIZE];
-    char host[BUFFER_SIZE];
-    char path[BUFFER_SIZE];
-    char r_port[BUFFER_SIZE];
-    char file[BUFFER_SIZE];
-    char m_port[BUFFER_SIZE];
-    char md[BUFFER_SIZE];
     char garbage[BUFFER_SIZE];
+    player_args pa;
 
-    int rc = sscanf(buffer, "%s %s %s %s %s %s %s %s %s", command, computer, host,
-            path, r_port, file, m_port, md, garbage);
+    int rc = sscanf(buffer, "%s %s %s %s %s %s %s %s %s", command,
+                    pa.computer, pa.host, pa.path, pa.r_port,
+                    pa.file, pa.m_port, pa.md, garbage);
 
     if (rc != 8) {
         fprintf(stderr, "START command incorrect\n");
@@ -25,43 +20,41 @@ void parse_start(char *buffer) {
     }
 }
 
-void parse_at(char *buffer) {
+void validate_at(player_list *pl, char *buffer) {
     char command[BUFFER_SIZE];
     char time_start[BUFFER_SIZE];
     char time_length[BUFFER_SIZE];
-    char computer[BUFFER_SIZE];
-    char host[BUFFER_SIZE];
-    char path[BUFFER_SIZE];
-    char r_port[BUFFER_SIZE];
-    char file[BUFFER_SIZE];
-    char m_port[BUFFER_SIZE];
-    char md[BUFFER_SIZE];
     char garbage[BUFFER_SIZE];
+    player_args pa;
 
     int rc = sscanf(buffer, "%s %s %s %s %s %s %s %s %s %s %s",
-                command, time_start, time_length, computer, host,
-                path, r_port, file, m_port, md, garbage);
+                command, time_start, time_length, pa.computer, pa.host,
+                pa.path, pa.r_port, pa.file, pa.m_port, pa.md, garbage);
 
     if (rc != 10) {
         fprintf(stderr, "AT command incorrect\n");
         return;
     } else {
-        printf("Command START\n");
+        printf("Command AT\n");
     }
 }
 
-bool player_with_id_exists(int id) {
+bool player_with_id_exists(player_list *pl, int id) {
+    int idx = player_list_find_by_id(pl, id);
+    if (idx < 0) {
+        return false;
+    }
     return true;
 }
 
-bool is_valid_simple_command(char *buffer) {
+static bool is_valid_simple_command(player_list *pl, char *buffer) {
     char command[BUFFER_SIZE];
     char id[BUFFER_SIZE];
     char garbage[BUFFER_SIZE];
 
     int rc = sscanf(buffer, "%s %s %s", command, id, garbage);
 
-    if (rc != 2 || !is_digits_only(id) || !player_with_id_exists(atoi(id))) {
+    if (rc != 2 || !is_digits_only(id) || !player_with_id_exists(pl, atoi(id))) {
         fprintf(stderr, "%s command incorrect\n", command);
         return false;
     } else {
@@ -70,35 +63,47 @@ bool is_valid_simple_command(char *buffer) {
     }
 }
 
-void parse_play(char *buffer) {
-    if (!is_valid_simple_command(buffer)) {
+static int get_id_from_simple_command(char *buffer) {
+    char command[BUFFER_SIZE];
+    char id[BUFFER_SIZE];
+
+    sscanf(buffer, "%s %s", command, id);
+    return atoi(id);
+}
+
+void validate_play(player_list *pl, char *buffer) {
+    if (!is_valid_simple_command(pl, buffer)) {
         return;
     }
+    int id = get_id_from_simple_command(buffer);
     // do_play
 }
 
-void parse_pause(char *buffer) {
-    if (!is_valid_simple_command(buffer)) {
+void validate_pause(player_list *pl, char *buffer) {
+    if (!is_valid_simple_command(pl, buffer)) {
         return;
     }
+    int id = get_id_from_simple_command(buffer);
     // do_pause
 }
 
-void parse_title(char *buffer) {
-    if (!is_valid_simple_command(buffer)) {
+void validate_title(player_list *pl, char *buffer) {
+    if (!is_valid_simple_command(pl, buffer)) {
         return;
     }
+    int id = get_id_from_simple_command(buffer);
     // do_title
 }
 
-void parse_quit(char *buffer) {
-    if (!is_valid_simple_command(buffer)) {
+void validate_quit(player_list *pl, char *buffer) {
+    if (!is_valid_simple_command(pl, buffer)) {
         return;
     }
+    int id = get_id_from_simple_command(buffer);
     // do_quit
 }
 
-void parse_telnet_command(char *buffer) {
+void parse_telnet_command(player_list *pl, char *buffer) {
     char command[BUFFER_SIZE];
     int rc;
     rc = sscanf(buffer, "%s", command);
@@ -107,17 +112,17 @@ void parse_telnet_command(char *buffer) {
         return;
     }
     if (!strcmp(command, "START")) {
-        parse_start(buffer);
+        validate_start(pl, buffer);
     } else if (!strcmp(command, "AT")) {
-        parse_at(buffer);
+        validate_at(pl, buffer);
     } else if (!strcmp(command, "PLAY")) {
-        parse_play(buffer);
+        validate_play(pl, buffer);
     } else if (!strcmp(command, "PAUSE")) {
-        parse_pause(buffer);
+        validate_pause(pl, buffer);
     } else if (!strcmp(command, "TITLE")) {
-        parse_title(buffer);
+        validate_title(pl, buffer);
     } else if (!strcmp(command, "QUIT")) {
-        parse_quit(buffer);
+        validate_quit(pl, buffer);
     } else {
         fprintf(stderr, "Invalid command: %s\n", command);
     }

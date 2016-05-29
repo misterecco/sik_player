@@ -14,8 +14,22 @@ typedef struct player_state {
     int id;
     int telnet_id;
     int socket;
+    char computer[BUFFER_SIZE];
+    // If true the player is not running but is planned to start
     bool is_scheduled;
+    // The player was planned to start but got QUIT command and will not start
+    bool is_cancelled;
 } player_state;
+
+typedef struct player_args {
+    char computer[BUFFER_SIZE];
+    char host[BUFFER_SIZE];
+    char path[BUFFER_SIZE];
+    char r_port[BUFFER_SIZE];
+    char file[BUFFER_SIZE];
+    char m_port[BUFFER_SIZE];
+    char md[BUFFER_SIZE];
+} player_args;
 
 typedef struct player_list {
     size_t length;
@@ -69,12 +83,11 @@ void close_client_socket(telnet_list *tl, int cn);
 void handle_client_messages(telnet_list *tl);
 
 // master_ssh
-void run_ssh();
 
 // master_time
 int calculate_sleep_time(char *time);
 
 // master_parse
-void parse_telnet_command(char* buffer);
+void parse_telnet_command(player_list *pl, char* buffer);
 
 #endif //SIK_PLAYER_MASTER_H

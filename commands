@@ -1,0 +1,6 @@
+AT 10.10 50 localhost ant-waw-01.cdn.eurozet.pl / 8600 test5.mp3 50000 yes
+START localhost ant-waw-01.cdn.eurozet.pl / 8600 test5.mp3 50000 yes
+PLAY 100
+PAUSE 100
+TITLE 100
+QUIT 100

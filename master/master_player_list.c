@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
+#include <memory.h>
 #include "master.h"
 
 static int last_id = -1;
@@ -15,6 +16,8 @@ static void player_list_reset_item(player_list *pl, int i) {
     pl->data[i].telnet_id = -1;
     pl->data[i].socket = -1;
     pl->data[i].is_scheduled = false;
+    pl->data[i].is_cancelled = false;
+    memset(pl->data[i].computer, 0, sizeof(pl->data[i].computer));
 }
 
 static void player_list_grow(player_list *pl) {

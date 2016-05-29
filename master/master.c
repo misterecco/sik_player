@@ -3,9 +3,8 @@
 #include "master.h"
 
 static telnet_list tl;
+static player_list pl;
 static config c;
-
-
 
 static void do_poll() {
     reset_revents(&tl);
@@ -22,32 +21,13 @@ static void do_poll() {
 int main(int argc, char **argv) {
 
     validate_arguments(argc, argv);
-
-    char bufferAT[] = "AT 10.10 50 localhost "
-            "ant-waw-01.cdn.eurozet.pl / 8600 test5.mp3 50000 yes";
-    char bufferSTART[] = "START localhost "
-            "ant-waw-01.cdn.eurozet.pl / 8600 test5.mp3 50000 yes";
-    char bufferPLAY[] = "PLAY 100";
-    char bufferPAUSE[] = "PAUSE 100";
-    char bufferTITLE[] = "TITLE 100";
-    char bufferQUIT[] = "QUIT 100";
-//    parse_telnet_command(bufferAT);
-//    parse_telnet_command(bufferSTART);
-//    parse_telnet_command(bufferPLAY);
-//    parse_telnet_command(bufferPAUSE);
-//    parse_telnet_command(bufferTITLE);
-//    parse_telnet_command(bufferQUIT);
-//    parse_telnet_command("fdsfhdasgh");
-
-//    exit(EXIT_SUCCESS);
-
     initialize_config(&c, argc, argv);
     telnet_list_initialize(&tl);
+    player_list_initialize(&pl);
     create_central_socket(&tl);
     bind_port_to_socket(&tl, &c);
     listen_on_central_socket(&tl);
 
-//    run_ssh();
 
     int c = 0;
     do {
@@ -56,7 +36,9 @@ int main(int argc, char **argv) {
     } while (c < 30);
 
     telnet_list_print(&tl);
+    player_list_print(&pl);
 
+    player_list_destroy(&pl);
     telnet_list_destroy(&tl);
     exit(EXIT_SUCCESS);
 }
