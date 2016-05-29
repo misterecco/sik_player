@@ -4,7 +4,17 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <memory.h>
+#include <time.h>
+#include <errno.h>
 #include "master.h"
+
+static int get_random_port_number() {
+    /* initialize random seed: */
+    srand ((unsigned int) time(NULL));
+    /* Generate a random number: */
+    int number = rand() % 40000;
+    return number + 10000;
+}
 
 void create_central_socket(telnet_list *tl) {
     int sock = socket(PF_INET, SOCK_STREAM, 0);
@@ -15,16 +25,38 @@ void create_central_socket(telnet_list *tl) {
     telnet_list_add(tl, sock);
 }
 
-// TODO: randomize listening port
+static void bind_given_port(telnet_list *tl, config *c, struct sockaddr_in *server) {
+    server->sin_port = htons(c->connection_port);
+    if (bind(tl->data[0].fd, (struct sockaddr*)server,
+             (socklen_t) sizeof(*server)) < 0) {
+        syserr("Binding stream socket");
+    }
+}
+
+static void bind_random_port(telnet_list *tl, config *c, struct sockaddr_in *server) {
+    while(true) {
+        c->connection_port = get_random_port_number();
+        server->sin_port = htons(c->connection_port);
+        if (bind(tl->data[0].fd, (struct sockaddr*)server,
+                 (socklen_t) sizeof(*server)) < 0) {
+            if (errno != EADDRINUSE) {
+                syserr("Binding stream socket");
+            }
+        } else {
+            printf("Listeting on port: %d\n", c->connection_port);
+            return;
+        }
+    }
+}
+
 void bind_port_to_socket(telnet_list *tl, config *c) {
     struct sockaddr_in server;
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = htonl(INADDR_ANY);
-    server.sin_port = htons(c->connection_port);
-    if (bind(tl->data[0].fd, (struct sockaddr*)&server,
-             (socklen_t) sizeof(server)) < 0) {
-        perror("Binding stream socket");
-        exit(EXIT_FAILURE);
+    if (c->connection_port > 0) {
+        bind_given_port(tl, c, &server);
+    } else {
+        bind_random_port(tl, c, &server);
     }
 }
 

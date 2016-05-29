@@ -1,21 +1,34 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <limits.h>
+#include <memory.h>
 #include "master.h"
+
+static int last_id = -1;
+
+static int get_next_id() {
+    last_id = (last_id + 1) % USHRT_MAX;
+    return last_id;
+}
 
 static void telnet_list_reset_item(telnet_list *tl, int i) {
     tl->data[i].fd = -1;
     tl->data[i].events = POLLIN;
     tl->data[i].revents = 0;
+    tl->state[i].id = -1;
+    tl->state[i].length_read = 0;
+    memset(tl->state[i].buffer, 0, sizeof(tl->state[i].buffer));
 }
 
 static void telnet_list_grow(telnet_list *tl) {
     tl->max_length *= 2;
     tl->data = realloc(tl->data, sizeof(struct pollfd) * tl->max_length);
+    tl->state = realloc(tl->state, sizeof(telnet_state) * tl->max_length);
     if (!tl->data) {
         syserr("realloc");
     }
-    for (int i = tl->length; i < tl->max_length; i++) {
-        telnet_list_reset_item(tl, i);
+    for (size_t i = tl->length; i < tl->max_length; i++) {
+        telnet_list_reset_item(tl, (int) i);
     }
 }
 
@@ -29,12 +42,16 @@ static void telnet_list_swap(telnet_list *tl, int i, int j) {
     struct pollfd temp = tl->data[i];
     tl->data[i] = tl->data[j];
     tl->data[j] = temp;
+    telnet_state tmp = tl->state[i];
+    tl->state[i] = tl->state[j];
+    tl->state[j] = tmp;
 }
 
 void telnet_list_initialize(telnet_list *tl) {
     tl->length = 0;
     tl->max_length = LIST_INIT_SIZE;
     tl->data = malloc(sizeof(struct pollfd) * tl->max_length);
+    tl->state = malloc(sizeof(telnet_state) * tl->max_length);
     if (!tl->data) {
         syserr("malloc");
     }
@@ -48,6 +65,7 @@ void telnet_list_add(telnet_list *tl, int fd) {
         telnet_list_grow(tl);
     }
     tl->data[tl->length].fd = fd;
+    tl->state[tl->length].id = get_next_id();
     tl->length += 1;
 }
 
@@ -61,10 +79,11 @@ void telnet_list_delete(telnet_list *tl, int index) {
 
 void telnet_list_destroy(telnet_list *tl) {
     free(tl->data);
+    free(tl->state);
 }
 
 void telnet_list_print(telnet_list *tl) {
     for (int i = 0; i < tl->length; i++) {
-        printf("Telnet list item %d: fd: %d\n", i, tl->data[i].fd);
+        printf("Telnet list item %d: fd: %d, id: %d\n", i, tl->data[i].fd, tl->state[i].id);
     }
 }

@@ -31,27 +31,29 @@ int main(int argc, char **argv) {
     char bufferPAUSE[] = "PAUSE 100";
     char bufferTITLE[] = "TITLE 100";
     char bufferQUIT[] = "QUIT 100";
-    parse_telnet_command(bufferAT);
-    parse_telnet_command(bufferSTART);
-    parse_telnet_command(bufferPLAY);
-    parse_telnet_command(bufferPAUSE);
-    parse_telnet_command(bufferTITLE);
-    parse_telnet_command(bufferQUIT);
-    parse_telnet_command("fdsfhdasgh");
+//    parse_telnet_command(bufferAT);
+//    parse_telnet_command(bufferSTART);
+//    parse_telnet_command(bufferPLAY);
+//    parse_telnet_command(bufferPAUSE);
+//    parse_telnet_command(bufferTITLE);
+//    parse_telnet_command(bufferQUIT);
+//    parse_telnet_command("fdsfhdasgh");
 
-    exit(EXIT_SUCCESS);
+//    exit(EXIT_SUCCESS);
 
-    initialize_config(&c);
+    initialize_config(&c, argc, argv);
     telnet_list_initialize(&tl);
     create_central_socket(&tl);
     bind_port_to_socket(&tl, &c);
     listen_on_central_socket(&tl);
 
-    run_ssh();
+//    run_ssh();
 
+    int c = 0;
     do {
         do_poll();
-    } while (true);
+        c++;
+    } while (c < 30);
 
     telnet_list_print(&tl);
 

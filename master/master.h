@@ -12,14 +12,22 @@
 
 typedef struct player_state {
     int id;
+    int telnet_id;
     int socket;
     bool is_scheduled;
 } player_state;
+
+typedef struct telnet_state {
+    int id;
+    int length_read;
+    char buffer[BUFFER_SIZE];
+} telnet_state;
 
 typedef struct telnet_list {
     size_t length;
     size_t max_length;
     struct pollfd *data;
+    telnet_state *state;
 } telnet_list;
 
 typedef struct config {
@@ -28,7 +36,7 @@ typedef struct config {
 
 // master_initialize
 void validate_arguments(int argc, char **argv);
-void initialize_config(config *c);
+void initialize_config(config *c, int argc, char **argv);
 
 // master_telnet_list
 void telnet_list_initialize(telnet_list *tl);
