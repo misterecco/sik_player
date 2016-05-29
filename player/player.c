@@ -99,6 +99,7 @@ int main (int argc, char **argv) {
     reset_host_buffer(&host_buffer);
     start_thread();
     while (!cfg.finish) {
+//        fprintf(stderr, "some garbage\n");
         listen_for_master_commands();
     }
     destroy_pthread_attr();

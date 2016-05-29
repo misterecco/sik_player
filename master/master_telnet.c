@@ -93,6 +93,7 @@ void close_client_socket(telnet_list *tl, int cn) {
 }
 
 // TODO: Erase telnet steering sequences
+// TODO: Commands ending with sole \r
 static void check_client(telnet_list *tl, player_list *pl, int cn) {
     ssize_t rval;
     char buffer[BUFFER_SIZE];
@@ -109,8 +110,6 @@ static void check_client(telnet_list *tl, player_list *pl, int cn) {
         close_client_socket(tl, cn);
         return;
     }
-    printf("Message received from telnet client number %d, id: %d: %s\n",
-           cn, tl->state[cn].id, buffer);
     parse_telnet_command(tl, pl, cn, buffer);
 }
 

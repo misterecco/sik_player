@@ -29,6 +29,8 @@ typedef struct player_args {
     char file[BUFFER_SIZE];
     char m_port[BUFFER_SIZE];
     char md[BUFFER_SIZE];
+    int id;
+    int telnet_id;
 } player_args;
 
 typedef struct player_list {
@@ -93,7 +95,7 @@ void handle_client_messages(telnet_list *tl, player_list *pl);
 void send_message_to_client(telnet_list *tl, int telnet_id, char *message);
 
 // master_ssh
-void run_ssh(player_args *pa);
+void run_ssh(telnet_list *tl, player_args *pa, int telnet_id);
 
 // master_time
 int calculate_sleep_time(char *time);

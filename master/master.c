@@ -51,7 +51,9 @@ void *start_thread(void *init_data) {
     free(init_data);
     printf("Starting player\n");
     sleep((unsigned int) data.sleep_time);
-    run_ssh(&data.pa);
+    int idx = player_list_find_by_id(data.pl, data.id);
+    int telnet_id = (data.pl)->data[idx].telnet_id;
+    run_ssh(data.tl, &data.pa, telnet_id);
     return 0;
 }
 
