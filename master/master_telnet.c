@@ -111,11 +111,23 @@ static void check_client(telnet_list *tl, player_list *pl, int cn) {
     }
     printf("Message received from telnet client number %d, id: %d: %s\n",
            cn, tl->state[cn].id, buffer);
-    parse_telnet_command(pl, buffer);
+    parse_telnet_command(tl, pl, cn, buffer);
 }
 
 void handle_client_messages(telnet_list *tl, player_list *pl) {
     for (int i = 1; i < tl->length; ++i) {
         check_client(tl, pl, i);
+    }
+}
+
+void send_message_to_client(telnet_list *tl, int telnet_id, char *message) {
+    int index = telnet_list_find_by_id(tl, telnet_id);
+    if (index < 0) {
+        return;
+    }
+    size_t len = strlen(message);
+    ssize_t rc = write(tl->data[index].fd, message, len);
+    if (rc < len) {
+        perror("write to telnet client");
     }
 }

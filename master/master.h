@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <poll.h>
+#include <pthread.h>
 #include "../libs/err.h"
 #include "../libs/common.h"
 
@@ -19,6 +20,7 @@ typedef struct player_state {
     bool is_scheduled;
     // The player was planned to start but got QUIT command and will not start
     bool is_cancelled;
+    pthread_t thread;
 } player_state;
 
 typedef struct player_args {
@@ -54,6 +56,14 @@ typedef struct config {
     int connection_port;
 } config;
 
+// master
+void *start_thread(void *init_data);
+void *quit_thread(void *init_data);
+void *title_thread(void *init_data);
+void run_thread(telnet_list *tl, player_list *pl,
+                player_args *pa, int id, int sleep_time,
+                void *(*start_routine) (void *));
+
 // master_initialize
 void validate_arguments(int argc, char **argv);
 void initialize_config(config *c, int argc, char **argv);
@@ -64,6 +74,7 @@ int telnet_list_add(telnet_list *tl, int fd);
 void telnet_list_delete(telnet_list *tl, int index);
 void telnet_list_destroy(telnet_list *tl);
 void telnet_list_print(telnet_list *tl);
+int telnet_list_find_by_id(telnet_list *tl, int id);
 
 // master_player_list
 void player_list_initialize(player_list *pl);
@@ -81,6 +92,7 @@ void reset_revents(telnet_list *tl);
 void accept_new_client(telnet_list *tl);
 void close_client_socket(telnet_list *tl, int cn);
 void handle_client_messages(telnet_list *tl, player_list *pl);
+void send_message_to_client(telnet_list *tl, int telnet_id, char *message);
 
 // master_ssh
 void run_ssh(player_args *pa);
@@ -89,6 +101,10 @@ void run_ssh(player_args *pa);
 int calculate_sleep_time(char *time);
 
 // master_parse
-void parse_telnet_command(player_list *pl, char* buffer);
+void parse_telnet_command(telnet_list *tl, player_list *pl,
+                          int telnet_id, char *buffer);
+
+// master_commands
+void start_command(telnet_list *tl, player_list *pl, player_args *pa, int telnet_id);
 
 #endif //SIK_PLAYER_MASTER_H

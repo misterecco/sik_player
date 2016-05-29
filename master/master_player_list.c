@@ -17,6 +17,7 @@ static void player_list_reset_item(player_list *pl, int i) {
     pl->data[i].socket = -1;
     pl->data[i].is_scheduled = false;
     pl->data[i].is_cancelled = false;
+    pl->data[i].thread = 0;
     memset(pl->data[i].computer, 0, sizeof(pl->data[i].computer));
 }
 

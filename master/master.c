@@ -10,7 +10,7 @@ static telnet_list tl;
 static player_list pl;
 static config c;
 
-static typedef struct thread_data {
+typedef struct thread_data {
     telnet_list *tl;
     player_list *pl;
     player_args pa;
@@ -38,6 +38,7 @@ static void fill_thread_data(thread_data **data, telnet_list *tl, player_list *p
         perror("malloc");
         return;
     }
+    printf("Filling thread data\n");
     (*data)->tl = tl;
     (*data)->pl = pl;
     (*data)->pa = *pa;
@@ -48,6 +49,7 @@ static void fill_thread_data(thread_data **data, telnet_list *tl, player_list *p
 void *start_thread(void *init_data) {
     thread_data data = *(thread_data *) init_data;
     free(init_data);
+    printf("Starting player\n");
     sleep((unsigned int) data.sleep_time);
     run_ssh(&data.pa);
     return 0;
@@ -74,9 +76,17 @@ void run_thread(telnet_list *tl, player_list *pl,
     thread_data *data;
     fill_thread_data(&data, tl, pl, pa, id, sleep_time);
     if (data == NULL) {
+        fprintf(stderr, "Thread data is null\n");
         return;
     }
-    if (pthread_create(NULL, &attr, start_routine, (void *)data) != 0) {
+    int index = player_list_find_by_id(pl, id);
+    if (index < 0) {
+        fprintf(stderr, "Player index negative\n");
+        free(data);
+        return; // TODO: handle this
+    }
+    printf("running thread\n");
+    if (pthread_create(&(pl->data[index].thread), &attr, start_routine, (void *)data) != 0) {
         perror("pthread_create");
     }
 }

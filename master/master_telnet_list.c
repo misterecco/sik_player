@@ -84,6 +84,15 @@ void telnet_list_destroy(telnet_list *tl) {
     free(tl->state);
 }
 
+int telnet_list_find_by_id(telnet_list *tl, int id) {
+    for (int i = 1; i < tl->length; i++) {
+        if (tl->state[i].id == id) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 void telnet_list_print(telnet_list *tl) {
     for (int i = 0; i < tl->length; i++) {
         printf("Telnet list item %d: fd: %d, id: %d\n", i, tl->data[i].fd, tl->state[i].id);
