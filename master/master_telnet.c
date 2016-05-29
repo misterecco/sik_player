@@ -92,8 +92,8 @@ void close_client_socket(telnet_list *tl, int cn) {
     printf("Closed telnet connection with client %d\n", cn);
 }
 
-// TODO: parse commands and handle them
-static void check_client(telnet_list *tl, int cn) {
+// TODO: Erase telnet steering sequences
+static void check_client(telnet_list *tl, player_list *pl, int cn) {
     ssize_t rval;
     char buffer[BUFFER_SIZE];
     memset(buffer, 0, sizeof(buffer));
@@ -109,12 +109,13 @@ static void check_client(telnet_list *tl, int cn) {
         close_client_socket(tl, cn);
         return;
     }
-    printf("Message received from telnet client number %d: %s\n", cn, buffer);
-//    parse_telnet_command(tl, buffer);
+    printf("Message received from telnet client number %d, id: %d: %s\n",
+           cn, tl->state[cn].id, buffer);
+    parse_telnet_command(pl, buffer);
 }
 
-void handle_client_messages(telnet_list *tl) {
+void handle_client_messages(telnet_list *tl, player_list *pl) {
     for (int i = 1; i < tl->length; ++i) {
-        check_client(tl, i);
+        check_client(tl, pl, i);
     }
 }

@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include "player.h"
 
-
 static pthread_t thread;
 static pthread_attr_t attr;
 
@@ -66,6 +65,7 @@ static void *worker(void *init_data) {
             main_job();
         }
     }
+    return 0;
 }
 
 static void start_thread() {
