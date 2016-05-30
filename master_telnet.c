@@ -33,7 +33,7 @@ static void bind_random_port(telnet_list *tl, config *c, struct sockaddr_in *ser
                 syserr("Binding stream socket");
             }
         } else {
-            printf("Listeting on port: %d\n", c->connection_port);
+            printf("Listening on port: %d\n", c->connection_port);
             return;
         }
     }

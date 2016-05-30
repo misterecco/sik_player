@@ -5,11 +5,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O2 -std=gnu99 -pthread -fsanitize=address -fsanitize=undefined")
 
-set(SOURCE_FILES_PLAYER player/player.h player/player.c player/player_network.c player/player_initizalize.c player/player_local.c player/player_parse.c)
+set(SOURCE_FILES_PLAYER player.h player.c player_network.c player_initialize.c player_local.c player_parse.c)
 
-set(SOURCE_FILES_MASTER master/master.h master/master.c master/master_telnet_list.c master/master_telnet.c master/master_initialize.c master/master_ssh.c master/master_time.c libs/common.c libs/common.h master/master_parse.c master/master_player_list.c master/master_commands.c)
+set(SOURCE_FILES_MASTER master.h master.c master_telnet_list.c master_telnet.c master_initialize.c master_ssh.c master_time.c common.c common.h master_parse.c master_player_list.c master_commands.c)
 
-set(SOURCE_FILES_COMMON libs/err.h libs/err.c libs/common.h libs/common.c)
+set(SOURCE_FILES_COMMON err.h err.c common.h common.c)
 
-add_executable(player ${SOURCE_FILES_PLAYER} ${SOURCE_FILES_COMMON})
-add_executable(master ${SOURCE_FILES_MASTER} ${SOURCE_FILES_COMMON})
+add_executable(player_files ${SOURCE_FILES_PLAYER} ${SOURCE_FILES_COMMON})
+add_executable(master_files ${SOURCE_FILES_MASTER} ${SOURCE_FILES_COMMON})

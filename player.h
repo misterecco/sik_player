@@ -5,8 +5,8 @@
 #include <poll.h>
 #include <stdint.h>
 #include <netdb.h>
-#include "../libs/err.h"
-#include "../libs/common.h"
+#include "err.h"
+#include "common.h"
 
 #define BUFFER_SIZE 128 * 1024
 #define TITLE_SIZE 255 * 16

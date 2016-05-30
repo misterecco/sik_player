@@ -4,8 +4,8 @@
 #include <stdbool.h>
 #include <poll.h>
 #include <pthread.h>
-#include "../libs/err.h"
-#include "../libs/common.h"
+#include "err.h"
+#include "common.h"
 
 #define LIST_INIT_SIZE 20
 #define POLL_REFRESH_TIME 3000
