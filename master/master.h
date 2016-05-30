@@ -31,6 +31,9 @@ typedef struct player_args {
     char md[BUFFER_SIZE];
     int id;
     int telnet_id;
+    int index;
+    int start_time;
+    int quit_time;
 } player_args;
 
 typedef struct player_list {
@@ -57,12 +60,9 @@ typedef struct config {
 } config;
 
 // master
-void *start_thread(void *init_data);
-void *quit_thread(void *init_data);
-void *title_thread(void *init_data);
-void run_thread(telnet_list *tl, player_list *pl,
-                player_args *pa, int id, int sleep_time,
-                void *(*start_routine) (void *));
+bool run_start_thread(telnet_list *tl, player_list *pl, player_args *pa);
+bool run_at_thread(telnet_list *tl, player_list *pl, player_args *pa);
+bool run_title_thread(telnet_list *tl, player_list *pl, player_args *pa);
 
 // master_initialize
 void validate_arguments(int argc, char **argv);
@@ -95,7 +95,7 @@ void handle_client_messages(telnet_list *tl, player_list *pl);
 void send_message_to_client(telnet_list *tl, int telnet_id, char *message);
 
 // master_ssh
-void run_ssh(telnet_list *tl, player_args *pa, int telnet_id);
+void run_ssh(telnet_list *tl, player_args *pa);
 
 // master_time
 int calculate_sleep_time(char *time);
@@ -105,11 +105,13 @@ void parse_telnet_command(telnet_list *tl, player_list *pl,
                           int telnet_id, char *buffer);
 
 // master_commands
-void start_command(telnet_list *tl, player_list *pl, player_args *pa, int telnet_id);
-void at_command(telnet_list *tl, player_list *pl, player_args *pa, int telnet_id, int ts, int tq);
-void do_quit(player_list *pl, int id);
-void do_pause(player_list *pl, int id);
-void do_play(player_list *pl, int id);
-void do_title(player_list *pl, int id);
+void start_command(telnet_list *tl, player_list *pl, player_args *pa);
+void at_command(telnet_list *tl, player_list *pl, player_args *pa);
+void title_command(telnet_list *tl, player_list *pl, player_args *pa);
+void quit_command(telnet_list *tl, player_list *pl, player_args *pa);
+void play_command(telnet_list *tl, player_list *pl, player_args *pa);
+void pause_command(telnet_list *tl, player_list *pl, player_args *pa);
+void do_quit(telnet_list *tl, player_list *pl, player_args *pa);
+void do_title(telnet_list *tl, player_list *pl, player_args *pa);
 
 #endif //SIK_PLAYER_MASTER_H

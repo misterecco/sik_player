@@ -51,46 +51,94 @@ static void send_message_to_player(int sock, char* message) {
     }
 }
 
-static void do_simple_command(player_list *pl, int id, char* command) {
-    int index = player_list_find_by_id(pl, id);
+static void do_simple_command(player_list *pl, player_args *pa, char* command) {
+    int index = player_list_find_by_id(pl, pa->id);
     if (index < 0) {
         return;
     }
     send_message_to_player(pl->data[index].socket, command);
 }
 
-void do_quit(player_list *pl, int id) {
-    do_simple_command(pl, id, "QUIT");
+static void wait_for_title_response(telnet_list *tl, player_list *pl,
+                                    player_args *pa) {
+    int index = player_list_find_by_id(pl, pa->id);
+    if (index < 0) {
+        return;
+    }
+    int sock = pl->data[index].socket;
+    char buffer[BUFFER_SIZE];
+    memset(buffer, 0, BUFFER_SIZE);
+    sprintf(buffer, "OK %d ", pa->id);
+    struct pollfd pf;
+    pf.fd = sock;
+    pf.events = POLLIN;
+    pf.revents = 0;
+    if (poll(&pf, 1, 3000) &&
+        read(pf.fd, buffer + strlen(buffer), BUFFER_SIZE - strlen(buffer)) >= 0) {
+        sprintf(buffer + strlen(buffer), "\n");
+        send_message_to_client(tl, pa->telnet_id, buffer);
+    } else {
+        sprintf(buffer, "ERROR %d\n", pa->id);
+        send_message_to_client(tl, pa->telnet_id, buffer);
+    }
 }
 
-void do_pause(player_list *pl, int id) {
-    do_simple_command(pl, id, "PAUSE");
+static void do_pause(telnet_list *tl, player_list *pl, player_args *pa) {
+    do_simple_command(pl, pa, "PAUSE");
 }
 
-void do_play(player_list *pl, int id) {
-    do_simple_command(pl, id, "PLAY");
+static void do_play(telnet_list *tl, player_list *pl, player_args *pa) {
+    do_simple_command(pl, pa, "PLAY");
 }
 
-void do_title(player_list *pl, int id) {
-    do_simple_command(pl, id, "TITLE");
+void do_quit(telnet_list *tl, player_list *pl, player_args *pa) {
+    do_simple_command(pl, pa, "QUIT");
+}
+
+void do_title(telnet_list *tl, player_list *pl, player_args *pa) {
+    do_simple_command(pl, pa, "TITLE");
+    wait_for_title_response(tl, pl, pa);
+}
+
+void send_confirmation_to_client(telnet_list *tl, player_list *pl, player_args *pa) {
+    char message[20];
+    memset(message, 0, sizeof(message));
+    sprintf(message, "OK %d\n", pa->id);
+    send_message_to_client(tl, pa->telnet_id, message);
 }
 
 // TODO: handle failure
-void start_command(telnet_list *tl, player_list *pl, player_args *pa, int telnet_id) {
-    int id = add_player(pl, pa, telnet_id);
-    run_thread(tl, pl, pa, id, 0, start_thread);
-    char message[10];
-    memset(message, 0, sizeof(message));
-    sprintf(message, "OK %d", id);
-    send_message_to_client(tl, telnet_id, message);
+void start_command(telnet_list *tl, player_list *pl, player_args *pa) {
+    pa->id = add_player(pl, pa, pa->telnet_id);
+    pa->index = player_list_find_by_id(pl, pa->id);
+    pa->start_time = 0;
+    run_start_thread(tl, pl, pa);
+    send_confirmation_to_client(tl, pl,pa);
 }
 
-void at_command(telnet_list *tl, player_list *pl, player_args *pa, int telnet_id, int ts, int tq) {
-    int id = add_player(pl, pa, telnet_id);
-    run_thread(tl, pl, pa, id, ts, start_thread);
-    char message[10];
-    memset(message, 0, sizeof(message));
-    sprintf(message, "OK %d", id);
-    send_message_to_client(tl, telnet_id, message);
-    run_thread(tl, pl, pa, id, tq, quit_thread);
+void at_command(telnet_list *tl, player_list *pl, player_args *pa) {
+    pa->id = add_player(pl, pa, pa->telnet_id);
+    pa->index = player_list_find_by_id(pl, pa->id);
+    run_at_thread(tl, pl, pa);
+    send_confirmation_to_client(tl, pl,pa);
+
+}
+
+void title_command(telnet_list *tl, player_list *pl, player_args *pa) {
+    run_title_thread(tl, pl, pa);
+}
+
+void quit_command(telnet_list *tl, player_list *pl, player_args *pa) {
+    do_quit(tl, pl, pa);
+    send_confirmation_to_client(tl, pl,pa);
+}
+
+void play_command(telnet_list *tl, player_list *pl, player_args *pa) {
+    do_play(tl, pl, pa);
+    send_confirmation_to_client(tl, pl,pa);
+}
+
+void pause_command(telnet_list *tl, player_list *pl, player_args *pa) {
+    do_pause(tl, pl, pa);
+    send_confirmation_to_client(tl, pl,pa);
 }

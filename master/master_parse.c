@@ -19,8 +19,7 @@ bool validate_start(player_args *pa, char *buffer) {
     return true;
 }
 
-// TODO: player should not run for less than 1 minut
-bool validate_at(player_args *pa, char *buffer, int *ts, int *tq) {
+bool validate_at(player_args *pa, char *buffer) {
     char command[BUFFER_SIZE];
     char time_start[BUFFER_SIZE];
     char time_length[BUFFER_SIZE];
@@ -34,73 +33,40 @@ bool validate_at(player_args *pa, char *buffer, int *ts, int *tq) {
         fprintf(stderr, "AT command incorrect\n");
         return false;
     }
-    *ts = calculate_sleep_time(time_start);
-    if (!is_digits_only(time_length) || *ts < 0) {
+    pa->start_time = calculate_sleep_time(time_start);
+    if (!is_digits_only(time_length) || pa->start_time < 0
+        || atoi(time_length) == 0) {
         return false;
     }
-    *tq = *ts + atoi(time_length) * 60;
+    pa->quit_time = pa->start_time + atoi(time_length) * 60;
     printf("Command AT\n");
     return true;
 }
 
-bool player_with_id_exists(player_list *pl, int id) {
-    int idx = player_list_find_by_id(pl, id);
-    if (idx < 0) {
+bool player_with_id_exists(player_list *pl, player_args *pa) {
+    pa->index = player_list_find_by_id(pl, pa->id);
+    if (pa->index < 0) {
         return false;
     }
     return true;
 }
 
-static bool is_valid_simple_command(player_list *pl, char *buffer) {
+static bool is_valid_simple_command(player_list *pl, player_args *pa,
+                                    char *buffer) {
     char command[BUFFER_SIZE];
     char id[BUFFER_SIZE];
     char garbage[BUFFER_SIZE];
 
     int rc = sscanf(buffer, "%s %s %s", command, id, garbage);
+    pa->id = atoi(id);
 
-    if (rc != 2 || !is_digits_only(id) || !player_with_id_exists(pl, atoi(id))) {
+    if (rc != 2 || !is_digits_only(id) || !player_with_id_exists(pl, pa)) {
         fprintf(stderr, "%s command incorrect\n", command);
         return false;
     } else {
         printf("Command %s\n", command);
         return true;
     }
-}
-
-static int get_id_from_simple_command(char *buffer) {
-    char command[BUFFER_SIZE];
-    char id[BUFFER_SIZE];
-
-    sscanf(buffer, "%s %s", command, id);
-    return atoi(id);
-}
-
-int validate_play(player_list *pl, char *buffer) {
-    if (!is_valid_simple_command(pl, buffer)) {
-        return -1;
-    }
-    return get_id_from_simple_command(buffer);
-}
-
-int validate_pause(player_list *pl, char *buffer) {
-    if (!is_valid_simple_command(pl, buffer)) {
-        return -1;
-    }
-    return get_id_from_simple_command(buffer);
-}
-
-int validate_title(player_list *pl, char *buffer) {
-    if (!is_valid_simple_command(pl, buffer)) {
-        return -1;
-    }
-    return get_id_from_simple_command(buffer);
-}
-
-int validate_quit(player_list *pl, char *buffer) {
-    if (!is_valid_simple_command(pl, buffer)) {
-        return -1;
-    }
-    return get_id_from_simple_command(buffer);
 }
 
 void parse_telnet_command(telnet_list *tl, player_list *pl,
@@ -113,27 +79,43 @@ void parse_telnet_command(telnet_list *tl, player_list *pl,
         return;
     }
     player_args pa;
+    pa.telnet_id = telnet_id;
     if (!strcmp(command, "START")) {
         if (validate_start(&pa, buffer)) {
-            start_command(tl, pl, &pa, telnet_id);
+            start_command(tl, pl, &pa);
         } else {
             // fail
         }
     } else if (!strcmp(command, "AT")) {
-        int start_time, quit_time;
-        if (validate_at(&pa, buffer, &start_time, &quit_time)) {
-            at_command(tl, pl, &pa, telnet_id, start_time, quit_time);
+        if (validate_at(&pa, buffer)) {
+            at_command(tl, pl, &pa);
         } else {
             // fail
         }
     } else if (!strcmp(command, "PLAY")) {
-        validate_play(pl, buffer);
+        if (is_valid_simple_command(pl, &pa, buffer)) {
+            play_command(tl, pl, &pa);
+        } else {
+            // fail
+        }
     } else if (!strcmp(command, "PAUSE")) {
-        validate_pause(pl, buffer);
+        if (is_valid_simple_command(pl, &pa, buffer)) {
+            pause_command(tl, pl, &pa);
+        } else {
+            // fail
+        }
     } else if (!strcmp(command, "TITLE")) {
-        validate_title(pl, buffer);
+        if (is_valid_simple_command(pl, &pa, buffer)) {
+            title_command(tl, pl, &pa);
+        } else {
+            // fail
+        }
     } else if (!strcmp(command, "QUIT")) {
-        validate_quit(pl, buffer);
+        if (is_valid_simple_command(pl, &pa, buffer)) {
+            quit_command(tl, pl, &pa);
+        } else {
+            // fail
+        }
     } else {
         fprintf(stderr, "Invalid command: %s\n", command);
     }
