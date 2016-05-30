@@ -9,7 +9,6 @@ void init_config(config *cfg) {
     cfg->finish = false;
     cfg->header_parsed = false;
     cfg->is_paused = false;
-    cfg->thread_finished = false;
     cfg->host_socket = 0;
     cfg->master_socket = 0;
     cfg->dump_fd = 1;

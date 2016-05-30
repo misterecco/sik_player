@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include "player.h"
 
-static pthread_t thread;
+pthread_t thread;
 static pthread_attr_t attr;
 
 static buffer_state host_buffer;
@@ -57,7 +57,6 @@ static void *worker(void *init_data) {
             main_job();
         }
     }
-    cfg.thread_finished = true;
     return 0;
 }
 
@@ -99,9 +98,10 @@ int main (int argc, char **argv) {
     send_icy_request(&cfg, argv[2]);
     reset_host_buffer(&host_buffer);
     start_thread();
-    while (!cfg.finish || !cfg.thread_finished) {
+    while (!cfg.finish) {
         listen_for_master_commands();
     }
+    pthread_cancel(thread);
     destroy_pthread_attr();
     close_dump_file(&cfg);
     close_sockets(&cfg);

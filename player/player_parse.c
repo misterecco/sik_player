@@ -1,6 +1,7 @@
 #include <memory.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <pthread.h>
 #include "player.h"
 
 static int get_status_code(char* header_buffer) {
