@@ -94,6 +94,7 @@ int telnet_list_find_by_id(telnet_list *tl, int id) {
 }
 
 void telnet_list_print(telnet_list *tl) {
+    printf("TELNET LIST\n");
     for (int i = 0; i < tl->length; i++) {
         printf("Telnet list item %d: fd: %d, id: %d\n", i, tl->data[i].fd, tl->state[i].id);
     }

@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <limits.h>
 #include <memory.h>
+#include <signal.h>
+#include <unistd.h>
 #include "master.h"
 
 static int last_id = -1;
@@ -93,9 +95,35 @@ void player_list_destroy(player_list *pl) {
     free(pl->data);
 }
 
+static void player_list_delete_by_index(player_list *pl, int idx) {
+    player_list_reset_item(pl, idx);
+    pl->length -= 1;
+    for (int i = idx; i < pl->length; i++) {
+        player_list_swap(pl, i ,i + 1);
+    }
+}
+
+void player_list_purge_dead_players(player_list *pl) {
+    for (ssize_t i = pl->length - 1; i >= 0; i--) {
+        if (!pl->data[i].start_thread) {
+            if (close(pl->data[i].socket)) {
+                perror("close");
+            }
+            pthread_t qtr = pl->data[i].quit_thread;
+            if (qtr) {
+                pthread_kill(qtr, SIGKILL);
+            }
+            player_list_delete_by_index(pl, (int) i);
+        }
+    }
+}
+
 void player_list_print(player_list *pl) {
+    printf("PLAYER LIST\n");
     for (int i = 0; i < pl->length; i++) {
-        printf("Player list item %d: id: %d, socket: %d, telnet_id: %d\n",
-               i, pl->data[i].id, pl->data[i].socket, pl->data[i].telnet_id);
+        printf("Player list item %d: id: %d, socket: %d, telnet_id: %d, start_thread: %ld\n",
+               i, pl->data[i].id, pl->data[i].socket, pl->data[i].telnet_id,
+                pl->data[i].start_thread
+        );
     }
 }

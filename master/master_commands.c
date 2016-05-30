@@ -107,6 +107,13 @@ void send_confirmation_to_client(telnet_list *tl, player_list *pl, player_args *
     send_message_to_client(tl, pa->telnet_id, message);
 }
 
+void send_error_to_client(telnet_list *tl, player_list *pl, player_args *pa) {
+    char message[20];
+    memset(message, 0, sizeof(message));
+    sprintf(message, "ERROR %d\n", pa->id);
+    send_message_to_client(tl, pa->telnet_id, message);
+}
+
 // TODO: handle failure
 void start_command(telnet_list *tl, player_list *pl, player_args *pa) {
     pa->id = add_player(pl, pa, pa->telnet_id);

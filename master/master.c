@@ -76,7 +76,6 @@ static void *title_thread(void *init_data) {
     return 0;
 }
 
-// TODO: handle failed pthread creation
 bool run_start_thread(telnet_list *tl, player_list *pl, player_args *pa) {
     thread_data *data;
     if (fill_thread_data(&data, tl, pl, pa)) {
@@ -153,6 +152,9 @@ int main(int argc, char **argv) {
     initialize_pthread_attr();
 
     do {
+        player_list_purge_dead_players(&pl);
+        player_list_print(&pl);
+        telnet_list_print(&tl);
         do_poll();
     } while (true);
 

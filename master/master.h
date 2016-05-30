@@ -83,6 +83,7 @@ int player_list_add(player_list *pl, int sock, int telnet_id);
 void player_list_delete(player_list *pl, int id);
 void player_list_destroy(player_list *pl);
 void player_list_print(player_list *pl);
+void player_list_purge_dead_players(player_list *pl);
 
 // master_telnet
 void create_central_socket(telnet_list *tl);
@@ -113,5 +114,7 @@ void play_command(telnet_list *tl, player_list *pl, player_args *pa);
 void pause_command(telnet_list *tl, player_list *pl, player_args *pa);
 void do_quit(telnet_list *tl, player_list *pl, player_args *pa);
 void do_title(telnet_list *tl, player_list *pl, player_args *pa);
+void send_confirmation_to_client(telnet_list *tl, player_list *pl, player_args *pa);
+void send_error_to_client(telnet_list *tl, player_list *pl, player_args *pa);
 
 #endif //SIK_PLAYER_MASTER_H
