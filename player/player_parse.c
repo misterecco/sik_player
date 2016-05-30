@@ -12,8 +12,8 @@ static int get_status_code(char* header_buffer) {
 static size_t get_data_length(config *c, char *header_buffer) {
     char* data_length = strstr(header_buffer, "icy-metaint");
     if (!data_length) {
-        fatal("Server didn't sent icy-metaint value");
-        exit(EXIT_FAILURE);
+        c->get_metadata = false;
+        return BUFFER_SIZE;
     }
     long dl = atoi(&data_length[12]);
     return (size_t) dl;
