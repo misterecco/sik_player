@@ -84,13 +84,13 @@ void parse_telnet_command(telnet_list *tl, player_list *pl,
         if (validate_start(&pa, buffer)) {
             start_command(tl, pl, &pa);
         } else {
-            send_error_to_client(tl, pl, &pa);
+            send_error_to_client_no_id(tl, pl, &pa);
         }
     } else if (!strcmp(command, "AT")) {
         if (validate_at(&pa, buffer)) {
             at_command(tl, pl, &pa);
         } else {
-            send_error_to_client(tl, pl, &pa);
+            send_error_to_client_no_id(tl, pl, &pa);
         }
     } else if (!strcmp(command, "PLAY")) {
         if (is_valid_simple_command(pl, &pa, buffer)
@@ -120,6 +120,6 @@ void parse_telnet_command(telnet_list *tl, player_list *pl,
             send_error_to_client(tl, pl, &pa);
         }
     } else {
-        fprintf(stderr, "Invalid command: %s\n", command);
+        send_error_to_client_no_id(tl, pl, &pa);
     }
 }

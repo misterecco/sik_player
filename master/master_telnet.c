@@ -6,7 +6,10 @@
 #include <memory.h>
 #include <time.h>
 #include <errno.h>
+#include <string.h>
 #include "master.h"
+
+#define _GNU_SOURCE
 
 static int get_random_port_number() {
     srand ((unsigned int) time(NULL));
@@ -92,16 +95,44 @@ void close_client_socket(telnet_list *tl, int cn) {
     printf("Closed telnet connection with client %d\n", cn);
 }
 
+static bool get_line_from_buffer(telnet_list *tl, player_list *pl, char* buffer, int cn) {
+    char* source = tl->state[cn].buffer;
+    printf("Message from client: %s\n", source);
+    char* line_end = strstr(source, "\r\n");
+    if (!line_end) {
+        line_end = strstr(source, "\n");
+    }
+    if (!line_end) {
+        line_end = strstr(source, "\r");
+    }
+    if (!line_end) {
+        return false;
+    }
+    size_t line_end_position = (size_t) (line_end - source);
+    printf("Line end position: %ld\n", line_end_position);
+    memcpy(buffer, source, line_end_position);
+    if (!strncmp(line_end, "\r\n", 2)) {
+        printf("have complete line end\n");
+        memmove(source, line_end + 2, BUFFER_SIZE - line_end_position - 2);
+        tl->state[cn].length_read -= line_end_position + 2;
+    } else {
+        printf("have only 1 char line end\n");
+        memmove(source, line_end + 1, BUFFER_SIZE - line_end_position - 1);
+        tl->state[cn].length_read -= line_end_position + 1;
+    }
+    return true;
+}
+
 // TODO: Erase telnet steering sequences
-// TODO: Commands ending with sole \r
 static void check_client(telnet_list *tl, player_list *pl, int cn) {
     ssize_t rval;
-    char buffer[BUFFER_SIZE];
-    memset(buffer, 0, sizeof(buffer));
+    memset(tl->state[cn].buffer + tl->state[cn].length_read, 0,
+           (size_t) (BUFFER_SIZE - tl->state[cn].length_read));
     if (!(tl->data[cn].revents & (POLLIN | POLLERR | POLLHUP))) {
         return;
     }
-    rval = read(tl->data[cn].fd, buffer, sizeof(buffer));
+    rval = read(tl->data[cn].fd, tl->state[cn].buffer + tl->state[cn].length_read,
+                (size_t) (BUFFER_SIZE - tl->state[cn].length_read));
     if (rval == 0) {
         close_client_socket(tl, cn);
         return;
@@ -110,7 +141,12 @@ static void check_client(telnet_list *tl, player_list *pl, int cn) {
         close_client_socket(tl, cn);
         return;
     }
-    parse_telnet_command(tl, pl, cn, buffer);
+    tl->state[cn].length_read += rval;
+    char buffer[BUFFER_SIZE];
+    memset(buffer, 0, BUFFER_SIZE);
+    if (get_line_from_buffer(tl, pl, buffer, cn)) {
+        parse_telnet_command(tl, pl, cn, buffer);
+    }
 }
 
 void handle_client_messages(telnet_list *tl, player_list *pl) {

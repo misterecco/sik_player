@@ -114,6 +114,13 @@ void send_error_to_client(telnet_list *tl, player_list *pl, player_args *pa) {
     send_message_to_client(tl, pa->telnet_id, message);
 }
 
+void send_error_to_client_no_id(telnet_list *tl, player_list *pl, player_args *pa) {
+    char message[20];
+    memset(message, 0, sizeof(message));
+    sprintf(message, "ERROR\n");
+    send_message_to_client(tl, pa->telnet_id, message);
+}
+
 void start_command(telnet_list *tl, player_list *pl, player_args *pa) {
     pa->id = add_player(pl, pa, pa->telnet_id);
     pa->index = player_list_find_by_id(pl, pa->id);
