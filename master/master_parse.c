@@ -69,17 +69,26 @@ static bool is_valid_simple_command(player_list *pl, player_args *pa,
     }
 }
 
+static bool has_semicolon(char* buffer) {
+    for (int i = 0; i < strlen(buffer); i++) {
+        if (buffer[i] == ';') {
+            return true;
+        }
+    }
+    return false;
+}
+
 void parse_telnet_command(telnet_list *tl, player_list *pl,
                           int telnet_id, char *buffer) {
     char command[BUFFER_SIZE];
     int rc;
-    rc = sscanf(buffer, "%s", command);
-    if (rc <= 0) {
-        fprintf(stderr, "Command wasn't recognized\n");
-        return;
-    }
     player_args pa;
     pa.telnet_id = telnet_id;
+    rc = sscanf(buffer, "%s", command);
+    if (rc <= 0 || has_semicolon(buffer)) {
+        send_error_to_client_no_id(tl, pl, &pa);
+        return;
+    }
     if (!strcmp(command, "START")) {
         if (validate_start(&pa, buffer)) {
             start_command(tl, pl, &pa);
