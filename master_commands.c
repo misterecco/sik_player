@@ -129,8 +129,11 @@ void start_command(telnet_list *tl, player_list *pl, player_args *pa) {
         return;
     }
     pa->start_time = 0;
-    run_start_thread(tl, pl, pa);
-    send_confirmation_to_client(tl, pl, pa);
+    if (!run_start_thread(tl, pl, pa)) {
+        send_error_to_client(tl, pl, pa);
+    } else {
+        send_confirmation_to_client(tl, pl, pa);
+    }
 }
 
 void at_command(telnet_list *tl, player_list *pl, player_args *pa) {
@@ -140,12 +143,17 @@ void at_command(telnet_list *tl, player_list *pl, player_args *pa) {
         send_error_to_client(tl, pl, pa);
         return;
     }
-    run_at_thread(tl, pl, pa);
-    send_confirmation_to_client(tl, pl, pa);
+    if (!run_at_thread(tl, pl, pa)) {
+        send_error_to_client(tl, pl, pa);
+    } else {
+        send_confirmation_to_client(tl, pl, pa);
+    }
 }
 
 void title_command(telnet_list *tl, player_list *pl, player_args *pa) {
-    run_title_thread(tl, pl, pa);
+    if(!run_title_thread(tl, pl, pa)) {
+        send_error_to_client(tl, pl, pa);
+    }
 }
 
 void quit_command(telnet_list *tl, player_list *pl, player_args *pa) {
