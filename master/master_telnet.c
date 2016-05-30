@@ -6,10 +6,8 @@
 #include <memory.h>
 #include <time.h>
 #include <errno.h>
-#include <string.h>
 #include "master.h"
 
-#define _GNU_SOURCE
 
 static int get_random_port_number() {
     srand ((unsigned int) time(NULL));
@@ -95,9 +93,9 @@ void close_client_socket(telnet_list *tl, int cn) {
     printf("Closed telnet connection with client %d\n", cn);
 }
 
-static bool get_line_from_buffer(telnet_list *tl, player_list *pl, char* buffer, int cn) {
+static bool get_line_from_buffer(telnet_list *tl, char* buffer, int cn) {
+    memset(buffer, 0, BUFFER_SIZE);
     char* source = tl->state[cn].buffer;
-    printf("Message from client: %s\n", source);
     char* line_end = strstr(source, "\r\n");
     if (!line_end) {
         line_end = strstr(source, "\n");
@@ -109,21 +107,58 @@ static bool get_line_from_buffer(telnet_list *tl, player_list *pl, char* buffer,
         return false;
     }
     size_t line_end_position = (size_t) (line_end - source);
-    printf("Line end position: %ld\n", line_end_position);
     memcpy(buffer, source, line_end_position);
     if (!strncmp(line_end, "\r\n", 2)) {
-        printf("have complete line end\n");
         memmove(source, line_end + 2, BUFFER_SIZE - line_end_position - 2);
         tl->state[cn].length_read -= line_end_position + 2;
     } else {
-        printf("have only 1 char line end\n");
         memmove(source, line_end + 1, BUFFER_SIZE - line_end_position - 1);
         tl->state[cn].length_read -= line_end_position + 1;
     }
     return true;
 }
 
-// TODO: Erase telnet steering sequences
+static bool is255(char c) {
+    if (c + 256 == 255) {
+        return true;
+    }
+    return false;
+}
+
+static bool is251254(char c) {
+    int val = c + 256;
+    if (val >= 251 && val <= 254) {
+        return true;
+    }
+    return false;
+}
+
+static void remove_chars_from_buffer(telnet_list *tl, int cn, int start, int length) {
+    memmove(tl->state[cn].buffer + start, tl->state[cn].buffer + start + length,
+            (size_t)(BUFFER_SIZE - start - length));
+    tl->state[cn].length_read -= length;
+}
+
+static void purge_steering_sequences(telnet_list *tl, int cn) {
+    char* source = tl->state[cn].buffer;
+    int i = 0;
+
+    while (i < tl->state[cn].length_read) {
+        if (is255(source[i])) {
+            if (is255(source[i+1])) {
+                remove_chars_from_buffer(tl, cn, i, 1);
+                i++;
+            } else if (is251254(source[i+1])) {
+                remove_chars_from_buffer(tl, cn, i, 3);
+            } else {
+                remove_chars_from_buffer(tl, cn, i, 2);
+            }
+        } else {
+            i++;
+        }
+    }
+}
+
 static void check_client(telnet_list *tl, player_list *pl, int cn) {
     ssize_t rval;
     memset(tl->state[cn].buffer + tl->state[cn].length_read, 0,
@@ -142,9 +177,9 @@ static void check_client(telnet_list *tl, player_list *pl, int cn) {
         return;
     }
     tl->state[cn].length_read += rval;
+    purge_steering_sequences(tl, cn);
     char buffer[BUFFER_SIZE];
-    memset(buffer, 0, BUFFER_SIZE);
-    if (get_line_from_buffer(tl, pl, buffer, cn)) {
+    while (get_line_from_buffer(tl, buffer, cn)) {
         parse_telnet_command(tl, pl, cn, buffer);
     }
 }

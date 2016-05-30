@@ -45,9 +45,7 @@ static bool fill_thread_data(thread_data **data, telnet_list *tl, player_list *p
 static void *start_thread(void *init_data) {
     thread_data data = *(thread_data *) init_data;
     free(init_data);
-    printf("Start thread going to sleep\n");
     sleep((unsigned int) data.pa.start_time);
-    printf("Starting player\n");
     player_list_lock();
     int idx = player_list_find_by_id(data.pl, data.pa.id);
     (data.pl)->data[idx].is_running = true;
@@ -65,9 +63,7 @@ static void *start_thread(void *init_data) {
 static void *quit_thread(void *init_data) {
     thread_data data = *(thread_data *) init_data;
     free(init_data);
-    printf("Quit thread going to sleep\n");
     sleep((unsigned int) data.pa.quit_time);
-    printf("Quitting player\n");
     do_quit(data.tl, data.pl, &data.pa);
     player_list_lock();
     int idx = player_list_find_by_id(data.pl, data.pa.id);
@@ -97,7 +93,6 @@ bool run_start_thread(telnet_list *tl, player_list *pl, player_args *pa) {
         fprintf(stderr, "Thread data is null\n");
         return false;
     }
-    printf("running START thread\n");
     player_list_lock();
     if (pthread_create(&(pl->data[pa->index].start_thread), &attr,
                        start_thread, (void *)data) != 0) {
@@ -120,7 +115,6 @@ bool run_at_thread(telnet_list *tl, player_list *pl, player_args *pa) {
         fprintf(stderr, "Thread data is null\n");
         return false;
     }
-    printf("running AT-START thread\n");
     player_list_lock();
     if (pthread_create(&(pl->data[pa->index].start_thread), &attr,
                        start_thread, (void *)data) != 0) {
@@ -130,7 +124,6 @@ bool run_at_thread(telnet_list *tl, player_list *pl, player_args *pa) {
         perror("pthread_create");
         return false;
     }
-    printf("running AT-QUIT thread\n");
     if (pthread_create(&(pl->data[pa->index].quit_thread), &attr,
                        quit_thread, (void *)data_for_quit) != 0) {
         player_list_unlock();
@@ -148,7 +141,6 @@ bool run_title_thread(telnet_list *tl, player_list *pl, player_args *pa) {
         fprintf(stderr, "Thread data is null\n");
         return false;
     }
-    printf("running TITLE thread\n");
     player_list_lock();
     if (pthread_create(&(pl->data[pa->index].title_thread), &attr,
                        title_thread, (void *)data) != 0) {
@@ -185,9 +177,9 @@ int main(int argc, char **argv) {
     initialize_pthread_attr();
 
     do {
-        player_list_print(&pl);
+//        player_list_print(&pl);
         player_list_purge_dead_players(&pl);
-        player_list_print(&pl);
+//        player_list_print(&pl);
         do_poll();
     } while (true);
 
