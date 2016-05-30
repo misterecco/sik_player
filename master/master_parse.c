@@ -93,19 +93,22 @@ void parse_telnet_command(telnet_list *tl, player_list *pl,
             send_error_to_client(tl, pl, &pa);
         }
     } else if (!strcmp(command, "PLAY")) {
-        if (is_valid_simple_command(pl, &pa, buffer)) {
+        if (is_valid_simple_command(pl, &pa, buffer)
+            && pl->data[pa.index].is_running) {
             play_command(tl, pl, &pa);
         } else {
             send_error_to_client(tl, pl, &pa);
         }
     } else if (!strcmp(command, "PAUSE")) {
-        if (is_valid_simple_command(pl, &pa, buffer)) {
+        if (is_valid_simple_command(pl, &pa, buffer)
+            && pl->data[pa.index].is_running) {
             pause_command(tl, pl, &pa);
         } else {
             send_error_to_client(tl, pl, &pa);
         }
     } else if (!strcmp(command, "TITLE")) {
-        if (is_valid_simple_command(pl, &pa, buffer)) {
+        if (is_valid_simple_command(pl, &pa, buffer)
+            && pl->data[pa.index].is_running) {
             title_command(tl, pl, &pa);
         } else {
             send_error_to_client(tl, pl, &pa);
