@@ -7,7 +7,7 @@
 #include "../libs/err.h"
 #include "../libs/common.h"
 
-#define LIST_INIT_SIZE 2
+#define LIST_INIT_SIZE 20
 #define POLL_REFRESH_TIME 3000
 #define BUFFER_SIZE 8 * 1024
 
@@ -19,6 +19,8 @@ typedef struct player_state {
     pthread_t start_thread;
     pthread_t quit_thread;
     pthread_t title_thread;
+    bool to_delete;
+    bool is_running;
 } player_state;
 
 typedef struct player_args {
@@ -84,6 +86,8 @@ void player_list_delete(player_list *pl, int id);
 void player_list_destroy(player_list *pl);
 void player_list_print(player_list *pl);
 void player_list_purge_dead_players(player_list *pl);
+void player_list_lock();
+void player_list_unlock();
 
 // master_telnet
 void create_central_socket(telnet_list *tl);

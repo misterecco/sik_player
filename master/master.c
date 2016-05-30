@@ -36,7 +36,6 @@ static bool fill_thread_data(thread_data **data, telnet_list *tl, player_list *p
         perror("malloc");
         return true;
     }
-    printf("Filling thread data\n");
     (*data)->tl = tl;
     (*data)->pl = pl;
     (*data)->pa = *pa;
@@ -49,9 +48,17 @@ static void *start_thread(void *init_data) {
     printf("Start thread going to sleep\n");
     sleep((unsigned int) data.pa.start_time);
     printf("Starting player\n");
-    run_ssh(data.tl, &data.pa);
+    player_list_lock();
     int idx = player_list_find_by_id(data.pl, data.pa.id);
-    data.pl->data[idx].start_thread = 0;
+    (data.pl)->data[idx].is_running = true;
+    player_list_unlock();
+    run_ssh(data.tl, &data.pa);
+    player_list_lock();
+    idx = player_list_find_by_id(data.pl, data.pa.id);
+    (data.pl)->data[idx].start_thread = 0;
+    (data.pl)->data[idx].to_delete = true;
+    (data.pl)->data[idx].is_running = false;
+    player_list_unlock();
     return 0;
 }
 
@@ -62,8 +69,10 @@ static void *quit_thread(void *init_data) {
     sleep((unsigned int) data.pa.quit_time);
     printf("Quitting player\n");
     do_quit(data.tl, data.pl, &data.pa);
+    player_list_lock();
     int idx = player_list_find_by_id(data.pl, data.pa.id);
-    data.pl->data[idx].quit_thread = 0;
+    (data.pl)->data[idx].quit_thread = 0;
+    player_list_unlock();
     return 0;
 }
 
@@ -71,8 +80,14 @@ static void *title_thread(void *init_data) {
     thread_data data = *(thread_data *) init_data;
     free(init_data);
     do_title(data.tl, data.pl, &data.pa);
+    player_list_lock();
     int idx = player_list_find_by_id(data.pl, data.pa.id);
-    data.pl->data[idx].title_thread = 0;
+    if (idx < 0) {
+        player_list_unlock();
+        return 0;
+    }
+    (data.pl)->data[idx].title_thread = 0;
+    player_list_unlock();
     return 0;
 }
 
@@ -83,11 +98,14 @@ bool run_start_thread(telnet_list *tl, player_list *pl, player_args *pa) {
         return false;
     }
     printf("running START thread\n");
+    player_list_lock();
     if (pthread_create(&(pl->data[pa->index].start_thread), &attr,
                        start_thread, (void *)data) != 0) {
         perror("pthread_create");
+        player_list_unlock();
         return false;
     }
+    player_list_unlock();
     return true;
 }
 
@@ -97,18 +115,30 @@ bool run_at_thread(telnet_list *tl, player_list *pl, player_args *pa) {
         fprintf(stderr, "Thread data is null\n");
         return false;
     }
+    thread_data *data_for_quit;
+    if (fill_thread_data(&data_for_quit, tl, pl, pa)) {
+        fprintf(stderr, "Thread data is null\n");
+        return false;
+    }
     printf("running AT-START thread\n");
+    player_list_lock();
     if (pthread_create(&(pl->data[pa->index].start_thread), &attr,
                        start_thread, (void *)data) != 0) {
+        player_list_unlock();
+        free(data);
+        free(data_for_quit);
         perror("pthread_create");
         return false;
     }
     printf("running AT-QUIT thread\n");
     if (pthread_create(&(pl->data[pa->index].quit_thread), &attr,
-                       quit_thread, (void *)data) != 0) {
+                       quit_thread, (void *)data_for_quit) != 0) {
+        player_list_unlock();
+        free(data_for_quit);
         perror("pthread_create");
         return false;
     }
+    player_list_unlock();
     return true;
 }
 
@@ -119,11 +149,14 @@ bool run_title_thread(telnet_list *tl, player_list *pl, player_args *pa) {
         return false;
     }
     printf("running TITLE thread\n");
+    player_list_lock();
     if (pthread_create(&(pl->data[pa->index].title_thread), &attr,
                        title_thread, (void *)data) != 0) {
         perror("pthread_create");
+        player_list_unlock();
         return false;
     }
+    player_list_unlock();
     return true;
 }
 
@@ -152,9 +185,9 @@ int main(int argc, char **argv) {
     initialize_pthread_attr();
 
     do {
+        player_list_print(&pl);
         player_list_purge_dead_players(&pl);
         player_list_print(&pl);
-        telnet_list_print(&tl);
         do_poll();
     } while (true);
 

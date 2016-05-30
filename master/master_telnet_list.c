@@ -33,10 +33,10 @@ static void telnet_list_grow(telnet_list *tl) {
 }
 
 static void telnet_list_swap(telnet_list *tl, int i, int j) {
-    if (i < 1 || i >= tl->length) {
+    if (i < 1 || i > tl->length) {
         return;
     }
-    if (j < 1 || j >= tl->length || i == j) {
+    if (j < 1 || j > tl->length || i == j) {
         return;
     }
     struct pollfd temp = tl->data[i];

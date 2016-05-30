@@ -114,21 +114,27 @@ void send_error_to_client(telnet_list *tl, player_list *pl, player_args *pa) {
     send_message_to_client(tl, pa->telnet_id, message);
 }
 
-// TODO: handle failure
 void start_command(telnet_list *tl, player_list *pl, player_args *pa) {
     pa->id = add_player(pl, pa, pa->telnet_id);
     pa->index = player_list_find_by_id(pl, pa->id);
+    if (pa->id < 0 || pa->index < 0) {
+        send_error_to_client(tl, pl, pa);
+        return;
+    }
     pa->start_time = 0;
     run_start_thread(tl, pl, pa);
-    send_confirmation_to_client(tl, pl,pa);
+    send_confirmation_to_client(tl, pl, pa);
 }
 
 void at_command(telnet_list *tl, player_list *pl, player_args *pa) {
     pa->id = add_player(pl, pa, pa->telnet_id);
     pa->index = player_list_find_by_id(pl, pa->id);
+    if (pa->id < 0 || pa->index < 0) {
+        send_error_to_client(tl, pl, pa);
+        return;
+    }
     run_at_thread(tl, pl, pa);
-    send_confirmation_to_client(tl, pl,pa);
-
+    send_confirmation_to_client(tl, pl, pa);
 }
 
 void title_command(telnet_list *tl, player_list *pl, player_args *pa) {
@@ -136,8 +142,16 @@ void title_command(telnet_list *tl, player_list *pl, player_args *pa) {
 }
 
 void quit_command(telnet_list *tl, player_list *pl, player_args *pa) {
+    player_list_lock();
+    if (pl->data[pa->index].start_thread &&
+            pl->data[pa->index].is_running == false) {
+        pthread_cancel(pl->data[pa->index].start_thread);
+        pl->data[pa->index].start_thread = 0;
+        pl->data[pa->index].to_delete = true;
+    }
+    player_list_unlock();
     do_quit(tl, pl, pa);
-    send_confirmation_to_client(tl, pl,pa);
+    send_confirmation_to_client(tl, pl, pa);
 }
 
 void play_command(telnet_list *tl, player_list *pl, player_args *pa) {
@@ -147,5 +161,5 @@ void play_command(telnet_list *tl, player_list *pl, player_args *pa) {
 
 void pause_command(telnet_list *tl, player_list *pl, player_args *pa) {
     do_pause(tl, pl, pa);
-    send_confirmation_to_client(tl, pl,pa);
+    send_confirmation_to_client(tl, pl, pa);
 }
