@@ -16,7 +16,6 @@ void run_ssh(telnet_list *tl, player_args *pa) {
     char buffer[BUFFER_SIZE + 8];
     sprintf(buffer, "ERROR %d: ", pa->id);
     while(fgets(buffer + strlen(buffer), BUFFER_SIZE, fd)) {
-        printf("Output: %s", buffer);
         send_message_to_client(tl, pa->telnet_id, buffer);
         memset(buffer, 0, BUFFER_SIZE + 8);
         sprintf(buffer, "ERROR %d: ", pa->id);

@@ -12,10 +12,8 @@ bool validate_start(player_args *pa, char *buffer) {
                     pa->file, pa->m_port, pa->md, garbage);
 
     if (rc != 8) {
-        fprintf(stderr, "START command incorrect\n");
         return false;
     }
-    printf("Command START\n");
     return true;
 }
 
@@ -39,7 +37,6 @@ bool validate_at(player_args *pa, char *buffer) {
         return false;
     }
     pa->quit_time = pa->start_time + atoi(time_length) * 60;
-    printf("Command AT\n");
     return true;
 }
 
@@ -61,10 +58,8 @@ static bool is_valid_simple_command(player_list *pl, player_args *pa,
     pa->id = atoi(id);
 
     if (rc != 2 || !is_digits_only(id) || !player_with_id_exists(pl, pa)) {
-        fprintf(stderr, "%s command incorrect\n", command);
         return false;
     } else {
-        printf("Command %s\n", command);
         return true;
     }
 }

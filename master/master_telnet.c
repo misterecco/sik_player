@@ -80,7 +80,6 @@ void accept_new_client(telnet_list *tl) {
             perror("accept");
         } else {
             telnet_list_add(tl, msgsock);
-            printf("Accepted new telnet client, number: %ld\n", tl->length - 1);
         }
     }
 }

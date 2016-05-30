@@ -177,14 +177,9 @@ int main(int argc, char **argv) {
     initialize_pthread_attr();
 
     do {
-//        player_list_print(&pl);
         player_list_purge_dead_players(&pl);
-//        player_list_print(&pl);
         do_poll();
-    } while (true);
-
-    telnet_list_print(&tl);
-    player_list_print(&pl);
+    } while (!c.finish);
 
     destroy_pthread_attr();
     player_list_destroy(&pl);

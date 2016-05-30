@@ -20,4 +20,5 @@ void initialize_config(config *c, int argc, char **argv) {
     } else {
         c->connection_port = -1;
     }
+    c->finish = false;
 }

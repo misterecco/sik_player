@@ -59,6 +59,7 @@ typedef struct telnet_list {
 
 typedef struct config {
     int connection_port;
+    bool finish;
 } config;
 
 // master
