@@ -22,7 +22,7 @@ bool is_port_number_valid(char *port_str) {
         return false;
     }
     int port = atoi(port_str);
-    if (port > USHRT_MAX ||port < 0) {
+    if (port > USHRT_MAX || port <= 0) {
         return false;
     }
     return true;
