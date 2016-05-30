@@ -33,7 +33,7 @@ typedef struct config {
     bool finish;
     bool header_parsed;
     bool is_paused;
-    bool metadata_synchronized;
+    bool thread_finished;
     int host_socket;
     int master_socket;
     int dump_fd;

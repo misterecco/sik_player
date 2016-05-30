@@ -57,6 +57,7 @@ static void *worker(void *init_data) {
             main_job();
         }
     }
+    cfg.thread_finished = true;
     return 0;
 }
 
@@ -98,7 +99,7 @@ int main (int argc, char **argv) {
     send_icy_request(&cfg, argv[2]);
     reset_host_buffer(&host_buffer);
     start_thread();
-    while (!cfg.finish) {
+    while (!cfg.finish || !cfg.thread_finished) {
         listen_for_master_commands();
     }
     destroy_pthread_attr();

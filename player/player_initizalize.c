@@ -9,6 +9,7 @@ void init_config(config *cfg) {
     cfg->finish = false;
     cfg->header_parsed = false;
     cfg->is_paused = false;
+    cfg->thread_finished = false;
     cfg->host_socket = 0;
     cfg->master_socket = 0;
     cfg->dump_fd = 1;
@@ -34,7 +35,6 @@ void set_get_metadata(config *c, char* choice) {
         return;
     } else if (!strcmp(choice, "no")) {
         c->get_metadata = false;
-        c->metadata_synchronized = true;
         return;
     } else {
         fatal("6th argument incorrect, only yes/no allowed, provided: %s", choice);
