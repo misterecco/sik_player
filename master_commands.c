@@ -115,9 +115,9 @@ void send_error_to_client(telnet_list *tl, player_list *pl, player_args *pa) {
 }
 
 void send_error_to_client_no_id(telnet_list *tl, player_list *pl, player_args *pa) {
-    char message[20];
+    char message[50];
     memset(message, 0, sizeof(message));
-    sprintf(message, "ERROR\n");
+    sprintf(message, "ERROR Wrong command or command parameters\n");
     send_message_to_client(tl, pa->telnet_id, message);
 }
 

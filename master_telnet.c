@@ -89,7 +89,6 @@ void close_client_socket(telnet_list *tl, int cn) {
         perror("close");
     }
     telnet_list_delete(tl, cn);
-    printf("Closed telnet connection with client %d\n", cn);
 }
 
 static bool get_line_from_buffer(telnet_list *tl, char* buffer, int cn) {

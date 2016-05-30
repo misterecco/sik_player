@@ -3,6 +3,13 @@
 #include <stdlib.h>
 #include "master.h"
 
+bool is_md_valid(char *md) {
+    if (!strcmp(md, "yes") || !strcmp(md, "no")) {
+        return true;
+    }
+    return false;
+}
+
 bool validate_start(player_args *pa, char *buffer) {
     char command[BUFFER_SIZE];
     char garbage[BUFFER_SIZE];
@@ -11,7 +18,9 @@ bool validate_start(player_args *pa, char *buffer) {
                     pa->computer, pa->host, pa->path, pa->r_port,
                     pa->file, pa->m_port, pa->md, garbage);
 
-    if (rc != 8) {
+    if (rc != 8 || !is_port_number_valid(pa->r_port)
+        || !is_port_number_valid(pa->m_port) || !strcmp(pa->file, "-")
+        || !is_md_valid(pa->md)) {
         return false;
     }
     return true;
@@ -28,12 +37,13 @@ bool validate_at(player_args *pa, char *buffer) {
                 pa->path, pa->r_port, pa->file, pa->m_port, pa->md, garbage);
 
     if (rc != 10) {
-        fprintf(stderr, "AT command incorrect\n");
         return false;
     }
     pa->start_time = calculate_sleep_time(time_start);
     if (!is_digits_only(time_length) || pa->start_time < 0
-        || atoi(time_length) == 0) {
+        || atoi(time_length) == 0 || !strcmp(pa->file, "-")
+        || !is_md_valid(pa->md) || !is_port_number_valid(pa->r_port)
+        || !is_port_number_valid(pa->m_port)) {
         return false;
     }
     pa->quit_time = pa->start_time + atoi(time_length) * 60;
